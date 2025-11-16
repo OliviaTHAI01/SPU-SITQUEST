@@ -197,8 +197,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Try to initialize map after a short delay
     setTimeout(tryInitMap, 500);
 
-    // --- API Configuration ---
-    const API_BASE_URL = 'http://localhost:3000/api';
+    // --- API Configuration (รองรับทั้ง local และ production) ---
+    const API_BASE_URL = window.location.origin + '/api';
 
     // --- Helper Functions for API Calls ---
     async function apiCall(endpoint, options = {}) {
@@ -280,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h2 style="color: #333; margin-bottom: 10px;">ไม่สามารถเชื่อมต่อฐานข้อมูล</h2>
                     <p style="margin-bottom: 20px;">กรุณาตรวจสอบว่า:</p>
                     <ul style="text-align: left; display: inline-block; margin: 0;">
-                        <li>เซิร์ฟเวอร์ Node.js ทำงานอยู่ (http://localhost:3000)</li>
+                        <li>เซิร์ฟเวอร์ Node.js ทำงานอยู่</li>
                         <li>MongoDB ทำงานอยู่และเชื่อมต่อได้</li>
                         <li>การตั้งค่า MONGODB_URI ถูกต้อง</li>
                     </ul>
