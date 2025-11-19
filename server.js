@@ -257,19 +257,24 @@ app.get('/api/activities', async (req, res) => {
 });
 
 // Get archived activities only
+// IMPORTANT: This route must be defined BEFORE /api/activities/:title to avoid route conflicts
 app.get('/api/activities/archived', async (req, res) => {
+  console.log('📦 GET /api/activities/archived - Request received');
   try {
     if (mongoose.connection.readyState !== 1) {
+      console.error('❌ Database not connected');
       return res.status(503).json({
         error: 'Database not connected',
         details: 'MongoDB connection is not established. Please check your MONGODB_URI environment variable.'
       });
     }
 
+    console.log('🔍 Fetching archived activities from database...');
     const activities = await Activity.find({ isArchived: true }).sort({ archivedDate: -1, createdAt: -1 });
+    console.log(`✅ Found ${activities.length} archived activities`);
     res.json(activities);
   } catch (error) {
-    console.error('Error fetching archived activities:', error);
+    console.error('❌ Error fetching archived activities:', error);
     res.status(500).json({
       error: error.message,
       details: 'Failed to fetch archived activities from database'
@@ -278,7 +283,15 @@ app.get('/api/activities/archived', async (req, res) => {
 });
 
 // Get single activity
+// IMPORTANT: This route must be defined AFTER /api/activities/archived to avoid route conflicts
 app.get('/api/activities/:title', async (req, res) => {
+  // Prevent /archived from matching this route
+  if (req.params.title === 'archived') {
+    return res.status(404).json({ 
+      error: 'Route conflict detected. Please use /api/activities/archived endpoint.' 
+    });
+  }
+  
   try {
     const activity = await Activity.findOne({ title: req.params.title });
     if (!activity) {
@@ -837,5 +850,12 @@ app.post('/api/students/:studentId/profile-image', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`📋 Available API endpoints:`);
+  console.log(`   GET  /api/activities`);
+  console.log(`   GET  /api/activities/archived`);
+  console.log(`   GET  /api/activities/:title`);
+  console.log(`   POST /api/activities`);
+  console.log(`   PUT  /api/activities/:title`);
+  console.log(`   DELETE /api/activities/:title`);
 });
 
