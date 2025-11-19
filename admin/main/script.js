@@ -454,7 +454,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function getArchivedActivitiesFromAPI() {
         try {
-            return await apiCall('/activities/archived');
+            // ลองใช้ endpoint /activities/archived ก่อน
+            try {
+                return await apiCall('/activities/archived');
+            } catch (archivedError) {
+                // ถ้า endpoint /activities/archived ไม่มี ให้ใช้ /activities?includeArchived=true
+                console.warn('Archived endpoint not available, using fallback:', archivedError.message);
+                const allActivities = await apiCall('/activities?includeArchived=true');
+                // กรองเฉพาะกิจกรรมที่ archived
+                return allActivities.filter(activity => activity.isArchived === true);
+            }
         } catch (error) {
             console.error('Error fetching archived activities:', error);
             return [];
