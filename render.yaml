@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: spu-activity-hub
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: MAX_BODY_SIZE
+        value: 20mb
+      - key: MONGODB_URI
+        fromDatabase:
+          name: spu-mongodb
+          property: connectionString
+
+databases:
+  - name: spu-mongodb
+    plan: free
+    databaseName: spu-activity-hub
+

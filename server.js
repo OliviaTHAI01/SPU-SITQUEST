@@ -100,36 +100,70 @@ app.get('/admin', (req, res) => {
 });
 
 // MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/spu-activity-hub';
+// รองรับทั้ง localhost, Render Internal Database, และ MongoDB Atlas
+let MONGODB_URI = process.env.MONGODB_URI;
+
+// ถ้าไม่มี MONGODB_URI ให้ใช้ default (สำหรับ local development)
+if (!MONGODB_URI) {
+  MONGODB_URI = 'mongodb://localhost:27017/spu-activity-hub';
+  console.log('⚠️  MONGODB_URI not set, using default localhost (for development only)');
+}
 
 // ตรวจสอบว่า MONGODB_URI ถูกตั้งค่าหรือไม่ (สำหรับ production)
 if (process.env.NODE_ENV === 'production' && !process.env.MONGODB_URI) {
   console.error('❌ ERROR: MONGODB_URI environment variable is not set!');
   console.error('❌ Please set MONGODB_URI in your hosting service environment variables.');
-  console.error('❌ Using default localhost connection (this will fail in production)');
+  console.error('❌ For Render: Use Internal Database URL from MongoDB service');
+  console.error('❌ For MongoDB Atlas: Use connection string from Atlas dashboard');
 }
 
 // ตรวจสอบว่าใช้ localhost หรือไม่ (สำหรับ production)
-if (process.env.NODE_ENV === 'production' && MONGODB_URI.includes('localhost')) {
+if (process.env.NODE_ENV === 'production' && MONGODB_URI.includes('localhost') && !MONGODB_URI.includes('mongo')) {
   console.error('❌ WARNING: Using localhost MongoDB URI in production!');
-  console.error('❌ This will not work. Please set MONGODB_URI to MongoDB Atlas connection string.');
+  console.error('❌ This will not work. Please set MONGODB_URI correctly:');
+  console.error('❌   - Render: Use Internal Database URL (mongodb://mongo:27017/...)');
+  console.error('❌   - MongoDB Atlas: Use connection string (mongodb+srv://...)');
 }
 
-mongoose.connect(MONGODB_URI)
+// MongoDB Connection Options
+const mongooseOptions = {
+  serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+  socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
+};
+
+mongoose.connect(MONGODB_URI, mongooseOptions)
 .then(() => {
   console.log('✅ Connected to MongoDB');
-  const maskedURI = MONGODB_URI.replace(/\/\/[^:]+:[^@]+@/, '//***:***@');
+  // Mask sensitive information in URI
+  const maskedURI = MONGODB_URI
+    .replace(/\/\/[^:]+:[^@]+@/, '//***:***@')
+    .replace(/mongodb\+srv:\/\/([^:]+):([^@]+)@/, 'mongodb+srv://***:***@');
   console.log('📊 MongoDB URI:', maskedURI);
   console.log('📊 Connection State:', mongoose.connection.readyState === 1 ? 'Connected' : 'Not Connected');
+  console.log('📊 Database:', mongoose.connection.db?.databaseName || 'Unknown');
 })
 .catch((error) => {
   console.error('❌ MongoDB connection error:', error.message);
   console.error('❌ MongoDB URI:', MONGODB_URI ? 'Set (but connection failed)' : 'NOT SET');
+  
   if (process.env.NODE_ENV === 'production') {
     console.error('❌ Please check:');
     console.error('   1. MONGODB_URI environment variable is set correctly');
-    console.error('   2. MongoDB Atlas Network Access allows 0.0.0.0/0');
-    console.error('   3. Database user credentials are correct');
+    
+    // ให้คำแนะนำตาม connection string
+    if (MONGODB_URI.includes('localhost') && !MONGODB_URI.includes('mongo')) {
+      console.error('   2. For Render: Use Internal Database URL from MongoDB service');
+      console.error('      Example: mongodb://mongo:27017/spu-activity-hub');
+    } else if (MONGODB_URI.includes('mongodb+srv://')) {
+      console.error('   2. MongoDB Atlas Network Access allows 0.0.0.0/0');
+      console.error('   3. Database user credentials are correct');
+    } else {
+      console.error('   2. MongoDB service is running and accessible');
+      console.error('   3. Database user credentials are correct');
+    }
+  } else {
+    console.error('💡 For local development: Make sure MongoDB is running');
+    console.error('   Run: mongod (or start MongoDB service)');
   }
 });
 
