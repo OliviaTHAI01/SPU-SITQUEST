@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - SPU Activity Hub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <!-- Leaflet (OpenStreetMap) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body class="dashboard-page-body">
+    <!-- Mobile Menu Toggle & Overlay -->
+    <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle Menu" type="button">
+        <i class="fas fa-bars"></i>
+    </button>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Sidebar Navigation -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="https://placehold.co/120x120/e91e63/white?text=Admin" alt="Profile Picture" class="profile-pic">
+            <!-- กรณีใช้รูปจริงให้เปลี่ยน src กลับเป็น path เดิม -->
+        </div>
+        <div class="profile-info">
+            <p><strong>ชื่ออาจารย์ :</strong> คณบดีตูน</p>
+            <p><strong>สาขา :</strong> Computer Science</p>
+        </div>
+
+        <div class="sidebar-menu">
+            <a href="#" class="active" data-view="dashboard"><i class="fas fa-home"></i> หน้าหลัก</a>
+            <a href="#" data-view="reports"><i class="fas fa-chart-bar"></i> รายงานผล</a>
+            <a href="#" data-view="students"><i class="fas fa-users"></i> รายชื่อนักศึกษา</a>
+        </div>
+
+        <button id="logout-btn" class="logout-btn" type="button">
+            <i class="fas fa-sign-out-alt"></i> ออกจากระบบ
+        </button>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <div class="header">
+            <div class="page-title-wrapper">
+                <h2 id="page-title">จัดการกิจกรรม</h2>
+            </div>
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" id="global-search" placeholder="ค้นหากิจกรรม...">
+            </div>
+        </div>
+
+        <section id="dashboard-view" class="content-view active">
+            <div class="header-actions" id="dashboard-actions">
+                <button id="add-activity-btn" class="add-activity-btn" type="button">
+                    <i class="fas fa-plus"></i> เพิ่มกิจกรรม
+                </button>
+                <button id="view-archived-btn" class="view-archived-btn" type="button">
+                    <i class="fas fa-archive"></i> ประวัติ
+                </button>
+            </div>
+
+            <div class="activity-grid" id="activity-grid">
+                <!-- Activity Cards will be rendered via JS -->
+            </div>
+        </section>
+
+        <section id="reports-view" class="content-view">
+            <div class="panel">
+                <div class="panel-header">
+                    <div>
+                        <h3>รายงานกิจกรรมทั้งหมด</h3>
+                        <p id="reports-summary-text">เลือกเมนูรายงานผลเพื่อดูข้อมูล</p>
+                    </div>
+                    <div class="summary-grid">
+                        <div class="summary-card">
+                            <span>จำนวนกิจกรรม</span>
+                            <strong id="reports-total-activities">0</strong>
+                        </div>
+                        <div class="summary-card">
+                            <span>ชั่วโมงรวม</span>
+                            <strong id="reports-total-hours">0</strong>
+                        </div>
+                        <div class="summary-card">
+                            <span>ผู้เข้าร่วมทั้งหมด</span>
+                            <strong id="reports-total-participants">0</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="reports-table">
+                        <thead>
+                            <tr>
+                        <th scope="col">ชื่อกิจกรรม</th>
+                        <th scope="col">วันที่</th>
+                        <th scope="col">ชั่วโมง</th>
+                        <th scope="col">จำนวนที่รับ</th>
+                        <th scope="col">ผู้เข้าร่วม</th>
+                        <th scope="col">สถานะ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reports-table-body">
+                            <tr><td colspan="6" class="table-placeholder">เลือกเมนูรายงานผลเพื่อดูข้อมูล</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="students-view" class="content-view">
+            <div class="panel">
+                <div class="panel-header">
+                    <div>
+                        <h3>รายชื่อนักศึกษาในระบบ</h3>
+                        <p>แสดงสถานะทุน จำนวนชั่วโมงสะสม และจำนวนกิจกรรมที่เข้าร่วม</p>
+                    </div>
+                    <div class="summary-grid">
+                        <div class="summary-card">
+                            <span>จำนวนนักศึกษา</span>
+                            <strong id="students-total-count">0</strong>
+                        </div>
+                        <div class="summary-card">
+                            <span>ชั่วโมงรวม</span>
+                            <strong id="students-total-hours">0</strong>
+                        </div>
+                        <div class="summary-card">
+                            <span>รวมการเข้าร่วม</span>
+                            <strong id="students-total-activities">0</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="students-table">
+                        <thead>
+                            <tr>
+                            <th scope="col">ชื่อนักศึกษา</th>
+                            <th scope="col">รหัส</th>
+                            <th scope="col">สถานะทุน</th>
+                            <th scope="col">ชั่วโมงสะสม</th>
+                            <th scope="col">จำนวนกิจกรรม</th>
+                            <th scope="col">การดำเนินการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="students-table-body">
+                            <tr><td colspan="6" class="table-placeholder">เลือกเมนูรายชื่อนักศึกษาเพื่อดูข้อมูล</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modals Section -->
+    <!-- Add Activity Modal -->
+    <div id="add-activity-modal" class="modal">
+        <div class="modal-content form-modal">
+            <span class="close-btn">&times;</span>
+            <h2>เพิ่มกิจกรรมใหม่</h2>
+            <form id="add-activity-form">
+                <div class="form-group">
+                    <label for="activity-title">ชื่อกิจกรรม</label>
+                    <input type="text" id="activity-title" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="activity-desc">คำอธิบาย</label>
+                    <textarea id="activity-desc" rows="3" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="activity-image-file">อัปโหลดรูปกิจกรรม</label>
+                    <input type="file" id="activity-image-file" accept="image/*" required>
+                    <small>รองรับไฟล์ JPG, PNG, GIF ขนาดไม่เกิน 5MB</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="activity-form-link">ลิงก์ฟอร์มลงทะเบียน</label>
+                    <input type="url" id="activity-form-link" placeholder="https://forms.gle/example" required>
+                    <small>ลิงก์ Google Form หรือฟอร์มอื่นๆ สำหรับลงทะเบียนเข้าร่วมกิจกรรม</small>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="activity-hours">ชั่วโมงกิจกรรม</label>
+                        <input type="number" id="activity-hours" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="activity-slots">จำนวนที่รับ</label>
+                        <input type="number" id="activity-slots" min="1" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="activity-date">วันที่</label>
+                        <input type="date" id="activity-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="activity-time">เวลา</label>
+                        <input type="time" id="activity-time" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="activity-location">สถานที่</label>
+                    <input type="text" id="activity-location" placeholder="ระบุชื่อสถานที่" required>
+                </div>
+
+                <div class="form-group">
+                    <label>เลือกตำแหน่งจากแผนที่</label>
+                    <div id="map-picker" class="map-box"></div>
+                    <button type="button" id="pick-location-btn" class="view-archived-btn map-action-btn">
+                        <i class="fas fa-map-marker-alt"></i> ค้นหาสถานที่จากชื่อ
+                    </button>
+                    <input type="hidden" id="activity-lat">
+                    <input type="hidden" id="activity-lng">
+                    <small>คลิกบนแผนที่เพื่อเลือกตำแหน่ง หรือลากหมุดเพื่อย้ายตำแหน่ง</small>
+                    <div class="form-row coords-row">
+                        <div class="form-group">
+                            <label for="activity-lat-input">ละติจูด (Latitude)</label>
+                            <input type="number" id="activity-lat-input" step="any">
+                        </div>
+                        <div class="form-group">
+                            <label for="activity-lng-input">ลองจิจูด (Longitude)</label>
+                            <input type="number" id="activity-lng-input" step="any">
+                        </div>
+                    </div>
+                    <button type="button" id="update-coords-btn" class="add-activity-btn map-action-btn">
+                        <i class="fas fa-sync-alt"></i> อัปเดตแผนที่
+                    </button>
+                </div>
+
+                <button type="submit" class="submit-btn">บันทึกกิจกรรม</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Participants Modal -->
+    <div id="participants-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-participants-modal">&times;</span>
+            <h2 id="participants-modal-title">รายชื่อผู้เข้าร่วม</h2>
+            <div class="participants-info">
+                <p>จำนวนผู้เข้าร่วม: <span id="participants-count">0</span> / <span id="max-slots">0</span></p>
+            </div>
+            <div class="participants-list" id="participants-list"></div>
+            <div class="modal-actions">
+                <button class="close-participants-btn" id="close-participants-btn" type="button">ปิด</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Activity Modal -->
+    <div id="edit-activity-modal" class="modal">
+        <div class="modal-content form-modal">
+            <span class="close-btn" id="close-edit-modal">&times;</span>
+            <h2>แก้ไขรายละเอียดกิจกรรม</h2>
+            <form id="edit-activity-form">
+                <div class="form-group">
+                    <label for="edit-activity-title">ชื่อกิจกรรม</label>
+                    <input type="text" id="edit-activity-title" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-activity-desc">คำอธิบาย</label>
+                    <textarea id="edit-activity-desc" rows="3" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-activity-image-file">อัปโหลดรูปกิจกรรม</label>
+                    <small id="edit-image-note">ยังไม่มีรูปกิจกรรม กรุณาอัปโหลดไฟล์ใหม่</small>
+                    <input type="file" id="edit-activity-image-file" accept="image/*">
+                    <small>รองรับไฟล์ JPG, PNG, GIF ขนาดไม่เกิน 5MB</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-activity-form-link">ลิงก์ฟอร์มลงทะเบียน</label>
+                    <input type="url" id="edit-activity-form-link" placeholder="https://forms.gle/example" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-activity-hours">จำนวนชั่วโมง</label>
+                        <input type="number" id="edit-activity-hours" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-activity-slots">จำนวนที่รับ</label>
+                        <input type="number" id="edit-activity-slots" min="1" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-activity-date">วันที่จัดกิจกรรม</label>
+                        <input type="date" id="edit-activity-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-activity-time">เวลาเริ่มต้น</label>
+                        <input type="time" id="edit-activity-time" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-activity-location">สถานที่จัดกิจกรรม</label>
+                    <input type="text" id="edit-activity-location" required>
+                </div>
+
+                <div class="form-group">
+                    <label>เลือกตำแหน่งจากแผนที่</label>
+                    <div id="edit-map-picker" class="map-box"></div>
+                    <button type="button" id="edit-pick-location-btn" class="view-archived-btn map-action-btn">
+                        <i class="fas fa-map-marker-alt"></i> ค้นหาสถานที่จากชื่อ
+                    </button>
+                    <input type="hidden" id="edit-activity-lat">
+                    <input type="hidden" id="edit-activity-lng">
+                    <div class="form-row coords-row">
+                        <div class="form-group">
+                            <label for="edit-activity-lat-input">ละติจูด</label>
+                            <input type="number" id="edit-activity-lat-input" step="any">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-activity-lng-input">ลองจิจูด</label>
+                            <input type="number" id="edit-activity-lng-input" step="any">
+                        </div>
+                    </div>
+                    <button type="button" id="edit-update-coords-btn" class="add-activity-btn map-action-btn">
+                        <i class="fas fa-sync-alt"></i> อัปเดตแผนที่
+                    </button>
+                </div>
+
+                <input type="hidden" id="edit-activity-original-title">
+                <input type="hidden" id="edit-activity-current-img">
+
+                <div class="modal-actions">
+                    <button type="button" class="delete-activity-btn" id="delete-activity-btn">
+                        <i class="fas fa-trash"></i> ลบกิจกรรม
+                    </button>
+                    <button type="button" class="cancel-edit-btn" id="cancel-edit-btn">ยกเลิก</button>
+                    <button type="submit" class="submit-btn">บันทึกการแก้ไข</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Archived Activities Modal -->
+    <div id="archived-modal" class="modal">
+        <div class="modal-content modal-content-wide">
+            <span class="close-btn" id="close-archived-modal">&times;</span>
+            <h2>ประวัติกิจกรรมที่เก็บไว้</h2>
+            <div class="archived-info">
+                <p>จำนวนกิจกรรมที่เก็บไว้: <span id="archived-count">0</span></p>
+            </div>
+            <div class="archived-list" id="archived-list"></div>
+            <div class="modal-actions">
+                <button class="close-archived-btn" id="close-archived-btn" type="button">ปิด</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hour Requests Modal -->
+    <div id="hour-requests-modal" class="modal">
+        <div class="modal-content modal-content-medium">
+            <span class="close-btn" id="close-hour-requests-modal">&times;</span>
+            <h2 id="hour-requests-modal-title">การยื่นรับเวลากิจกรรม</h2>
+            <div class="hour-requests-info">
+                <p>จำนวนการยื่นรับเวลา: <span id="hour-requests-count">0</span></p>
+            </div>
+            <div class="hour-requests-list" id="hour-requests-list"></div>
+            <div class="modal-actions">
+                <button class="close-hour-requests-btn" id="close-hour-requests-btn" type="button">ปิด</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Detail Modal -->
+    <div id="student-detail-modal" class="modal">
+        <div class="modal-content modal-content-medium">
+            <span class="close-btn" id="close-student-detail-modal">&times;</span>
+            <h2 id="student-detail-name">รายละเอียดนักศึกษา</h2>
+            <p class="modal-subtitle" id="student-detail-info"></p>
+            <div class="table-responsive">
+                <table class="data-table compact">
+                    <thead>
+                        <tr>
+                        <th scope="col">กิจกรรม</th>
+                        <th scope="col">ชั่วโมง</th>
+                        <th scope="col">วันที่</th>
+                        </tr>
+                    </thead>
+                    <tbody id="student-detail-table-body">
+                        <tr><td colspan="3" class="table-placeholder">ยังไม่มีกิจกรรมที่เข้าร่วม</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script สำหรับ UI Mobile Menu -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const menuToggle = document.getElementById('mobile-menu-toggle');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            const closeButtons = document.querySelectorAll('.close-btn');
+
+            // Toggle Sidebar
+            function toggleSidebar() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            }
+
+            if (menuToggle) {
+                menuToggle.addEventListener('click', toggleSidebar);
+            }
+
+            if (overlay) {
+                overlay.addEventListener('click', toggleSidebar);
+            }
+
+            // Close modals logic (Basic UI only)
+            closeButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    this.closest('.modal').style.display = 'none';
+                });
+            });
+        });
+    </script>
+
+    <!-- เชื่อมต่อกับ script หลักของคุณ -->
+    <script src="script.js"></script>
+</body>
+</html>

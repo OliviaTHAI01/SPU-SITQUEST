@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate - SPU Activity Hub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="certificate-page-body">
+     <div class="certificate-container">
+        <div class="corner-decoration top-left"></div>
+        <div class="corner-decoration bottom-right"></div>
+        <div class="certificate-content">
+            <p class="cert-title">CERTIFICATE</p>
+            <p class="cert-subtitle">OF ACHIEVEMENT</p>
+            <div class="cert-line"></div>
+            <p class="cert-text">THIS CERTIFICATE IS STUDENT DEVELOPMENT HOUR BY</p>
+            <p class="cert-name" id="cert-student-name">Muyong Winterfell</p>
+            <p class="cert-text" id="cert-description">This is a student development activity organized by the Faculty of Information Technology, Sripatum University.<br>It is issued as an official certificate to confirm the student's eligibility for activity hour accumulation.</p>
+            <p class="cert-activity-title" id="cert-activity-title"></p>
+            <p class="cert-hours" id="cert-hours"></p>
+            <div class="signatures">
+                <div class="signature"><p class="signature-img">K. Kongkwan</p><p>นาย กะบงกวช คงควรคอย</p><p>ผู้มีอำนาจออกรับรอง</p></div>
+                <div class="signature"><img src="../../img/logo2.png" alt="SPU Logo" class="signature-logo"></div>
+                <div class="signature"><p class="signature-img" id="cert-student-signature">J. Jiewjairung</p><p id="cert-student-name-thai">นาง จีจี้ เยี่ยวสิรุ้ง</p><p>ผู้เข้าร่วมกิจกรรม</p></div>
+            </div>
+        </div>
+    </div>
+    <div class="certificate-actions">
+        <button type="button" id="download-image-btn" class="cert-btn cert-btn-primary">
+            <i class="fas fa-download"></i> ดาวน์โหลดเป็นภาพ
+        </button>
+        <button type="button" id="download-pdf-btn" class="cert-btn cert-btn-secondary">
+            <i class="fas fa-file-pdf"></i> ดาวน์โหลดเป็น PDF
+        </button>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

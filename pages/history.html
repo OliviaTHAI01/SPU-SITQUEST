@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ประวัติกิจกรรมของฉัน - SPU Activity Hub</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../css/dashboard.css" />
+    <link rel="stylesheet" href="../css/history.css" />
+  </head>
+  <body>
+    <div class="history-page">
+      <header class="history-header">
+        <a href="dashboard.html" class="back-to-dashboard-btn">
+          <i class="fas fa-arrow-left"></i>
+          <span>กลับหน้าหลัก</span>
+        </a>
+        <div class="history-title-wrapper">
+          <h1>ประวัติกิจกรรมของฉัน</h1>
+          <p class="history-subtitle">
+            ติดตามกิจกรรมที่กำลังเข้าร่วมและกิจกรรมที่สำเร็จเรียบร้อยแล้ว
+          </p>
+        </div>
+      </header>
+
+      <section class="history-tabs" role="tablist">
+        <button
+          class="history-tab-button active"
+          data-target="ongoing-panel"
+          aria-controls="ongoing-panel"
+          aria-selected="true"
+          role="tab"
+        >
+          <i class="fas fa-hourglass-half"></i>
+          กำลังเข้าร่วม
+        </button>
+        <button
+          class="history-tab-button"
+          data-target="completed-panel"
+          aria-controls="completed-panel"
+          aria-selected="false"
+          role="tab"
+        >
+          <i class="fas fa-check-circle"></i>
+          กิจกรรมที่สำเร็จ
+        </button>
+        <button
+          class="history-tab-button"
+          data-target="certificate-panel"
+          aria-controls="certificate-panel"
+          aria-selected="false"
+          role="tab"
+        >
+          <i class="fas fa-award"></i>
+          ประวัติใบเกียรติบัตร
+        </button>
+      </section>
+
+      <section class="history-state-cards">
+        <div id="history-loading" class="history-state-card">
+          <i class="fas fa-spinner fa-spin"></i>
+          <p>กำลังโหลดข้อมูลกิจกรรมของคุณ...</p>
+        </div>
+        <div id="history-error" class="history-state-card hidden">
+          <i class="fas fa-exclamation-triangle"></i>
+          <div>
+            <p>ไม่สามารถโหลดข้อมูลได้</p>
+            <button id="history-retry-btn" type="button">
+              <i class="fas fa-sync-alt"></i> ลองใหม่
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="ongoing-panel"
+        class="history-panel active"
+        role="tabpanel"
+        aria-labelledby="tab-ongoing"
+      >
+        <div class="history-list" id="ongoing-list"></div>
+      </section>
+
+      <section
+        id="completed-panel"
+        class="history-panel"
+        role="tabpanel"
+        aria-labelledby="tab-completed"
+      >
+        <div class="history-list" id="completed-list"></div>
+      </section>
+
+      <section
+        id="certificate-panel"
+        class="history-panel"
+        role="tabpanel"
+        aria-labelledby="tab-certificate"
+      >
+        <div class="history-list" id="certificate-list"></div>
+      </section>
+    </div>
+
+    <script src="../js/history.js"></script>
+  </body>
+</html>
+
