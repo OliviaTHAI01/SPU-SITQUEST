@@ -506,10 +506,79 @@ document.addEventListener('DOMContentLoaded', () => {
     const certStudentSignature = document.getElementById('cert-student-signature');
     const certStudentNameThai = document.getElementById('cert-student-name-thai');
     
-    if (certStudentName || certActivityTitle || certHours || certDescription) {
-        // โหลดข้อมูลใบรับรองจาก localStorage
-        const certificateData = JSON.parse(localStorage.getItem('spu-certificate-data') || 'null');
+    // ฟังก์ชันโหลดข้อมูลใบเกียรติบัตร
+    async function loadCertificateData() {
+        let certificateData = null;
         
+        // วิธีที่ 1: โหลดจาก URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const activityTitle = urlParams.get('activity');
+        const requestId = urlParams.get('requestId');
+        const studentId = urlParams.get('studentId');
+        
+        if (activityTitle && studentId) {
+            try {
+                // โหลดข้อมูลจาก API
+                const API_BASE_URL = window.location.origin + '/api';
+                
+                // โหลดข้อมูลกิจกรรม
+                const activityResponse = await fetch(`${API_BASE_URL}/activities/${encodeURIComponent(activityTitle)}`);
+                if (activityResponse.ok) {
+                    const activity = await activityResponse.json();
+                    
+                    // โหลดข้อมูล hour request
+                    let request = null;
+                    if (requestId) {
+                        try {
+                            const requestResponse = await fetch(`${API_BASE_URL}/hour-requests/${requestId}`);
+                            if (requestResponse.ok) {
+                                request = await requestResponse.json();
+                            }
+                        } catch (error) {
+                            console.warn('Could not load hour request:', error);
+                        }
+                    }
+                    
+                    // โหลดข้อมูลนักศึกษา
+                    let studentInfo = null;
+                    try {
+                        const studentResponse = await fetch(`${API_BASE_URL}/students/${encodeURIComponent(studentId)}`);
+                        if (studentResponse.ok) {
+                            studentInfo = await studentResponse.json();
+                        }
+                    } catch (error) {
+                        console.warn('Could not load student info:', error);
+                    }
+                    
+                    // สร้าง certificate data
+                    certificateData = {
+                        studentName: studentInfo?.name || localStorage.getItem('studentName') || 'ไม่ระบุชื่อ',
+                        studentId: studentId,
+                        activityTitle: activity.title || activityTitle,
+                        hours: request?.hours || activity.hours || 0,
+                        requestDate: request?.requestDate || '',
+                        approvedDate: request?.approvedDate || '',
+                        description: activity.desc || 'This is a student development activity organized by the Faculty of Information Technology, Sripatum University. It is issued as an official certificate to confirm the student\'s eligibility for activity hour accumulation.'
+                    };
+                }
+            } catch (error) {
+                console.error('Error loading certificate data from API:', error);
+            }
+        }
+        
+        // วิธีที่ 2: โหลดจาก localStorage (fallback)
+        if (!certificateData) {
+            const storedData = localStorage.getItem('spu-certificate-data');
+            if (storedData) {
+                try {
+                    certificateData = JSON.parse(storedData);
+                } catch (error) {
+                    console.error('Error parsing certificate data from localStorage:', error);
+                }
+            }
+        }
+        
+        // อัปเดต UI
         if (certificateData) {
             // อัปเดตชื่อนักศึกษา
             if (certStudentName) {
@@ -546,14 +615,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (certDescription) {
                 certDescription.innerHTML = certificateData.description || 'This is a student development activity organized by the Faculty of Information Technology, Sripatum University. It is issued as an official certificate to confirm the student\'s eligibility for activity hour accumulation.';
             }
-            
         } else {
             // ถ้าไม่มีข้อมูล ให้ใช้ข้อมูล default
-            console.warn('No certificate data found in localStorage');
+            console.warn('No certificate data found. Using default values.');
         }
     }
     
-    // ฟังก์ชันสร้างภาพ (PNG/JPG)
+    // โหลดข้อมูลเมื่อหน้าโหลดเสร็จ
+    if (certStudentName || certActivityTitle || certHours || certDescription) {
+        loadCertificateData();
+    }
+    
+    // ฟังก์ชันสร้างภาพ (PNG/JPG) - แก้ไขให้ capture ทั้งใบ
     async function generateImage(format = 'png') {
         const certificateContainer = document.querySelector('.certificate-container');
         if (!certificateContainer) {
@@ -572,22 +645,53 @@ document.addEventListener('DOMContentLoaded', () => {
         const downloadBtn = document.getElementById('download-image-btn');
         const originalText = downloadBtn.innerHTML;
         downloadBtn.disabled = true;
-        downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังสร้างภาพ...';
+        downloadBtn.classList.add('loading');
+        downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>กำลังสร้างภาพ...</span>';
         
         try {
-            // สร้าง canvas ด้วยคุณภาพสูง
+            // เก็บค่าเดิมเพื่อ restore หลัง capture
+            const originalOverflow = document.body.style.overflow;
+            const originalHeight = certificateContainer.style.height;
+            const originalMaxHeight = certificateContainer.style.maxHeight;
+            const originalMarginBottom = certificateContainer.style.marginBottom;
+            
+            // ตั้งค่าให้แสดงทั้งใบ
+            document.body.style.overflow = 'visible';
+            certificateContainer.style.height = 'auto';
+            certificateContainer.style.maxHeight = 'none';
+            certificateContainer.style.marginBottom = '0';
+            
+            // รอให้ layout อัปเดต
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // คำนวณขนาดจริงของ container
+            const rect = certificateContainer.getBoundingClientRect();
+            const scrollWidth = certificateContainer.scrollWidth;
+            const scrollHeight = certificateContainer.scrollHeight;
+            
+            // สร้าง canvas ด้วยคุณภาพสูง - ใช้ขนาดจริงของทั้งใบ
             const canvas = await html2canvas(certificateContainer, {
-                scale: 3, // เพิ่มความละเอียด 3 เท่า
+                scale: 4, // เพิ่มความละเอียด 4 เท่า
                 useCORS: true,
                 logging: false,
                 backgroundColor: '#ffffff',
-                width: certificateContainer.offsetWidth,
-                height: certificateContainer.offsetHeight,
-                windowWidth: certificateContainer.scrollWidth,
-                windowHeight: certificateContainer.scrollHeight,
+                width: scrollWidth,
+                height: scrollHeight,
+                windowWidth: scrollWidth,
+                windowHeight: scrollHeight,
                 allowTaint: false,
-                removeContainer: false
+                removeContainer: false,
+                scrollX: 0,
+                scrollY: 0,
+                x: 0,
+                y: 0
             });
+            
+            // Restore ค่าเดิม
+            document.body.style.overflow = originalOverflow;
+            certificateContainer.style.height = originalHeight;
+            certificateContainer.style.maxHeight = originalMaxHeight;
+            certificateContainer.style.marginBottom = originalMarginBottom;
             
             // แปลง canvas เป็น blob
             const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
@@ -610,6 +714,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // คืนค่า button
                 downloadBtn.disabled = false;
+                downloadBtn.classList.remove('loading');
                 downloadBtn.innerHTML = originalText;
                 
                 console.log('Image generated and downloaded successfully');
@@ -618,12 +723,13 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error generating image:', error);
             alert('เกิดข้อผิดพลาดในการสร้างภาพ: ' + error.message);
             downloadBtn.disabled = false;
+            downloadBtn.classList.remove('loading');
             downloadBtn.innerHTML = originalText;
         }
     }
     
-    // ฟังก์ชันสร้าง PDF (ปรับปรุงให้สวยงามขึ้น)
-    function generatePDF() {
+    // ฟังก์ชันสร้าง PDF - แก้ไขให้ capture ทั้งใบ
+    async function generatePDF() {
         const certificateContainer = document.querySelector('.certificate-container');
         if (!certificateContainer) {
             console.error('Certificate container not found');
@@ -641,46 +747,85 @@ document.addEventListener('DOMContentLoaded', () => {
         const downloadBtn = document.getElementById('download-pdf-btn');
         const originalText = downloadBtn.innerHTML;
         downloadBtn.disabled = true;
-        downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังสร้าง PDF...';
+        downloadBtn.classList.add('loading');
+        downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>กำลังสร้าง PDF...</span>';
         
-        const opt = {
-            margin: [0, 0, 0, 0],
-            filename: `certificate_${Date.now()}.pdf`,
-            image: { 
-                type: 'jpeg', 
-                quality: 0.98 
-            },
-            html2canvas: { 
-                scale: 3, // เพิ่มความละเอียด 3 เท่า
-                useCORS: true,
-                logging: false,
-                backgroundColor: '#ffffff',
-                width: certificateContainer.offsetWidth,
-                height: certificateContainer.offsetHeight,
-                windowWidth: certificateContainer.scrollWidth,
-                windowHeight: certificateContainer.scrollHeight,
-                allowTaint: false
-            },
-            jsPDF: { 
-                unit: 'mm', 
-                format: [210, 297], // A4 portrait
-                orientation: 'portrait',
-                compress: true
-            },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-        };
-        
-        // สร้าง PDF และดาวน์โหลด
-        html2pdf().set(opt).from(certificateContainer).save().then(() => {
+        try {
+            // เก็บค่าเดิมเพื่อ restore หลัง capture
+            const originalOverflow = document.body.style.overflow;
+            const originalHeight = certificateContainer.style.height;
+            const originalMaxHeight = certificateContainer.style.maxHeight;
+            const originalMarginBottom = certificateContainer.style.marginBottom;
+            
+            // ตั้งค่าให้แสดงทั้งใบ
+            document.body.style.overflow = 'visible';
+            certificateContainer.style.height = 'auto';
+            certificateContainer.style.maxHeight = 'none';
+            certificateContainer.style.marginBottom = '0';
+            
+            // รอให้ layout อัปเดต
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // คำนวณขนาดจริงของ container
+            const scrollWidth = certificateContainer.scrollWidth;
+            const scrollHeight = certificateContainer.scrollHeight;
+            
+            // คำนวณขนาด PDF (A4 = 210mm x 297mm)
+            // แปลง pixel เป็น mm (ประมาณ 3.78 pixels per mm)
+            const widthMM = (scrollWidth / 3.78);
+            const heightMM = (scrollHeight / 3.78);
+            
+            const opt = {
+                margin: [0, 0, 0, 0],
+                filename: `certificate_${Date.now()}.pdf`,
+                image: { 
+                    type: 'jpeg', 
+                    quality: 0.98 
+                },
+                html2canvas: { 
+                    scale: 4, // เพิ่มความละเอียด 4 เท่า
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff',
+                    width: scrollWidth,
+                    height: scrollHeight,
+                    windowWidth: scrollWidth,
+                    windowHeight: scrollHeight,
+                    allowTaint: false,
+                    scrollX: 0,
+                    scrollY: 0,
+                    x: 0,
+                    y: 0
+                },
+                jsPDF: { 
+                    unit: 'mm', 
+                    format: [Math.max(210, widthMM), Math.max(297, heightMM)], // ใช้ขนาดจริงหรือ A4 ตามที่ใหญ่กว่า
+                    orientation: heightMM > widthMM ? 'portrait' : 'landscape',
+                    compress: true
+                },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+            
+            // สร้าง PDF และดาวน์โหลด
+            await html2pdf().set(opt).from(certificateContainer).save();
+            
+            // Restore ค่าเดิม
+            document.body.style.overflow = originalOverflow;
+            certificateContainer.style.height = originalHeight;
+            certificateContainer.style.maxHeight = originalMaxHeight;
+            certificateContainer.style.marginBottom = originalMarginBottom;
+            
             console.log('PDF generated and downloaded successfully');
             downloadBtn.disabled = false;
+            downloadBtn.classList.remove('loading');
             downloadBtn.innerHTML = originalText;
-        }).catch((error) => {
+        } catch (error) {
             console.error('Error generating PDF:', error);
             alert('เกิดข้อผิดพลาดในการสร้าง PDF: ' + error.message);
             downloadBtn.disabled = false;
+            downloadBtn.classList.remove('loading');
             downloadBtn.innerHTML = originalText;
-        });
+        }
     }
     
     // Event listeners สำหรับปุ่ม
@@ -898,6 +1043,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="card-content">
                             <h3>${activity.title}</h3>
                             <p>${activity.desc || 'เป็นกิจกรรมสะสมชั่วโมงเพื่อให้อาจารย์และเพื่อนนักศึกษารับรู้ในทุกด้าน'}</p>
+                            ${activity.tags && activity.tags.length > 0 ? `
+                            <div class="card-tags">
+                                ${activity.tags.map(tag => {
+                                    let tagClass = 'tag-custom';
+                                    if (tag === 'Online') tagClass = 'tag-online';
+                                    else if (tag === 'จิตอาสาและอื่นๆ' || tag === 'จิตอาสา' || tag === 'และอื่นๆ') tagClass = 'tag-volunteer';
+                                    return `<span class="card-tag ${tagClass}">${tag === 'จิตอาสา' || tag === 'และอื่นๆ' ? 'จิตอาสาและอื่นๆ' : tag}</span>`;
+                                }).join('')}
+                            </div>
+                            ` : ''}
                             <p class="activity-date-display" style="color: #666; font-size: 0.9rem; margin-top: 0.5rem;">
                                 <i class="fas fa-calendar-alt"></i> ${dateDisplay}
                             </p>
@@ -956,16 +1111,35 @@ document.addEventListener('DOMContentLoaded', () => {
         const closeBtn = modal.querySelector('.close-btn');
         const addActivityForm = document.getElementById('add-activity-form');
 
+        function resetAddActivityForm() {
+            selectedTags = [];
+            document.querySelectorAll('.tag-checkbox').forEach(cb => cb.checked = false);
+            const customTagInput = document.getElementById('activity-tags-custom');
+            if (customTagInput) {
+                customTagInput.value = '';
+            }
+            updateSelectedTagsDisplay('selected-tags-display');
+        }
+        
         if (addActivityBtn) {
-            addActivityBtn.addEventListener('click', () => modal.style.display = 'flex');
+            addActivityBtn.addEventListener('click', () => {
+                modal.style.display = 'flex';
+                resetAddActivityForm();
+            });
         }
         if (closeBtn) {
-            closeBtn.addEventListener('click', () => modal.style.display = 'none');
+            closeBtn.addEventListener('click', () => {
+                modal.style.display = 'none';
+                addActivityForm.reset();
+                resetAddActivityForm();
+            });
         }
         if (modal) {
             window.addEventListener('click', (event) => {
                 if (event.target == modal) {
                     modal.style.display = 'none';
+                    addActivityForm.reset();
+                    resetAddActivityForm();
                 }
             });
         }
@@ -1103,6 +1277,143 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        // --- Tags Management Functions ---
+        let selectedTags = [];
+        
+        function getSelectedTags() {
+            const checkboxes = document.querySelectorAll('.tag-checkbox:checked');
+            const tags = Array.from(checkboxes).map(cb => cb.value);
+            return [...tags, ...selectedTags.filter(tag => !['Online', 'จิตอาสาและอื่นๆ'].includes(tag))];
+        }
+        
+        function updateSelectedTagsDisplay(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            const tags = getSelectedTags();
+            container.innerHTML = '';
+            
+            tags.forEach(tag => {
+                const tagItem = document.createElement('span');
+                tagItem.className = 'selected-tag-item';
+                
+                let tagClass = 'tag-custom';
+                if (tag === 'Online') tagClass = 'tag-online';
+                else if (tag === 'จิตอาสาและอื่นๆ' || tag === 'จิตอาสา' || tag === 'และอื่นๆ') tagClass = 'tag-volunteer';
+                
+                tagItem.innerHTML = `
+                    <span class="card-tag ${tagClass}">${tag}</span>
+                    <span class="remove-tag" data-tag="${tag}">×</span>
+                `;
+                container.appendChild(tagItem);
+            });
+            
+            // Add remove event listeners
+            container.querySelectorAll('.remove-tag').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tagToRemove = btn.dataset.tag;
+                    if (['Online', 'จิตอาสาและอื่นๆ'].includes(tagToRemove)) {
+                        const checkbox = document.querySelector(`.tag-checkbox[value="${tagToRemove}"]`);
+                        if (checkbox) checkbox.checked = false;
+                    } else {
+                        selectedTags = selectedTags.filter(t => t !== tagToRemove);
+                    }
+                    updateSelectedTagsDisplay(containerId);
+                });
+            });
+        }
+        
+        // Initialize tags management for add form
+        const tagCheckboxes = document.querySelectorAll('.tag-checkbox');
+        tagCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                updateSelectedTagsDisplay('selected-tags-display');
+            });
+        });
+        
+        const customTagInput = document.getElementById('activity-tags-custom');
+        if (customTagInput) {
+            customTagInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const tagValue = customTagInput.value.trim();
+                    if (tagValue && !selectedTags.includes(tagValue) && !['Online', 'จิตอาสาและอื่นๆ'].includes(tagValue)) {
+                        selectedTags.push(tagValue);
+                        customTagInput.value = '';
+                        updateSelectedTagsDisplay('selected-tags-display');
+                    }
+                }
+            });
+        }
+        
+        // Initialize tags management for edit form
+        let editSelectedTags = [];
+        
+        function getEditSelectedTags() {
+            const checkboxes = document.querySelectorAll('.edit-tag-checkbox:checked');
+            const tags = Array.from(checkboxes).map(cb => cb.value);
+            return [...tags, ...editSelectedTags.filter(tag => !['Online', 'จิตอาสาและอื่นๆ'].includes(tag))];
+        }
+        
+        function updateEditSelectedTagsDisplay() {
+            const container = document.getElementById('edit-selected-tags-display');
+            if (!container) return;
+            
+            const tags = getEditSelectedTags();
+            container.innerHTML = '';
+            
+            tags.forEach(tag => {
+                const tagItem = document.createElement('span');
+                tagItem.className = 'selected-tag-item';
+                
+                let tagClass = 'tag-custom';
+                if (tag === 'Online') tagClass = 'tag-online';
+                else if (tag === 'จิตอาสาและอื่นๆ' || tag === 'จิตอาสา' || tag === 'และอื่นๆ') tagClass = 'tag-volunteer';
+                
+                tagItem.innerHTML = `
+                    <span class="card-tag ${tagClass}">${tag}</span>
+                    <span class="remove-tag" data-tag="${tag}">×</span>
+                `;
+                container.appendChild(tagItem);
+            });
+            
+            // Add remove event listeners
+            container.querySelectorAll('.remove-tag').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tagToRemove = btn.dataset.tag;
+                    if (['Online', 'จิตอาสาและอื่นๆ'].includes(tagToRemove)) {
+                        const checkbox = document.querySelector(`.edit-tag-checkbox[value="${tagToRemove}"]`);
+                        if (checkbox) checkbox.checked = false;
+                    } else {
+                        editSelectedTags = editSelectedTags.filter(t => t !== tagToRemove);
+                    }
+                    updateEditSelectedTagsDisplay();
+                });
+            });
+        }
+        
+        const editTagCheckboxes = document.querySelectorAll('.edit-tag-checkbox');
+        editTagCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                updateEditSelectedTagsDisplay();
+            });
+        });
+        
+        const editCustomTagInput = document.getElementById('edit-activity-tags-custom');
+        if (editCustomTagInput) {
+            editCustomTagInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const tagValue = editCustomTagInput.value.trim();
+                    if (tagValue && !editSelectedTags.includes(tagValue) && !['Online', 'จิตอาสาและอื่นๆ'].includes(tagValue)) {
+                        editSelectedTags.push(tagValue);
+                        editCustomTagInput.value = '';
+                        updateEditSelectedTagsDisplay();
+                    }
+                }
+            });
+        }
+
         addActivityForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -1120,6 +1431,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 desc: document.getElementById('activity-desc').value,
                 imgUrl: imageValue,
                 formLink: document.getElementById('activity-form-link').value,
+                tags: getSelectedTags(),
                 hours: parseInt(document.getElementById('activity-hours').value) || 0,
                 slots: parseInt(document.getElementById('activity-slots').value) || 10,
                 date: document.getElementById('activity-date').value,
@@ -1145,6 +1457,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (addImageFileInput) {
                     addImageFileInput.value = '';
                 }
+                
+                // Reset tags
+                selectedTags = [];
+                document.querySelectorAll('.tag-checkbox').forEach(cb => cb.checked = false);
+                document.getElementById('activity-tags-custom').value = '';
+                updateSelectedTagsDisplay('selected-tags-display');
                 
                 alert('เพิ่มกิจกรรมสำเร็จ');
             } catch (error) {
@@ -1513,11 +1831,32 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('edit-activity-location').value = activity.location || '';
             document.getElementById('edit-activity-lat').value = activity.lat || '';
             document.getElementById('edit-activity-lng').value = activity.lng || '';
-            document.getElementById('edit-activity-original-title').value = activity.title;
+            const originalTitleValue = activity.title ? activity.title.trim() : '';
+            document.getElementById('edit-activity-original-title').value = originalTitleValue;
             const editCurrentImg = document.getElementById('edit-activity-current-img');
             if (editCurrentImg) {
                 editCurrentImg.value = activity.imgUrl || '';
             }
+            
+            // Load tags - convert old tags to new format
+            editSelectedTags = [];
+            document.querySelectorAll('.edit-tag-checkbox').forEach(cb => {
+                const tagValue = cb.value;
+                // Check if activity has this tag, or has old format tags that should map to this
+                let shouldCheck = false;
+                if (activity.tags) {
+                    if (activity.tags.includes(tagValue)) {
+                        shouldCheck = true;
+                    } else if (tagValue === 'จิตอาสาและอื่นๆ' && (activity.tags.includes('จิตอาสา') || activity.tags.includes('และอื่นๆ'))) {
+                        shouldCheck = true;
+                    }
+                }
+                cb.checked = shouldCheck;
+            });
+            if (activity.tags) {
+                editSelectedTags = activity.tags.filter(tag => !['Online', 'จิตอาสาและอื่นๆ', 'จิตอาสา', 'และอื่นๆ'].includes(tag));
+            }
+            updateEditSelectedTagsDisplay();
 
             // Update map if lat/lng exists
             if (activity.lat && activity.lng && editMap) {
@@ -1541,6 +1880,14 @@ document.addEventListener('DOMContentLoaded', () => {
         function hideEditActivityModal() {
             editActivityModal.style.display = 'none';
             editActivityForm.reset();
+            // Reset tags
+            editSelectedTags = [];
+            document.querySelectorAll('.edit-tag-checkbox').forEach(cb => cb.checked = false);
+            const editCustomTagInput = document.getElementById('edit-activity-tags-custom');
+            if (editCustomTagInput) {
+                editCustomTagInput.value = '';
+            }
+            updateEditSelectedTagsDisplay();
         }
 
         if (closeEditModal) {
@@ -1559,7 +1906,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const deleteActivityBtn = document.getElementById('delete-activity-btn');
         if (deleteActivityBtn) {
             deleteActivityBtn.addEventListener('click', async () => {
-                const originalTitle = document.getElementById('edit-activity-original-title').value;
+                const originalTitleInput = document.getElementById('edit-activity-original-title');
+                if (!originalTitleInput) {
+                    alert('ไม่พบข้อมูลกิจกรรม');
+                    return;
+                }
+                
+                let originalTitle = originalTitleInput.value;
+                if (originalTitle) {
+                    originalTitle = originalTitle.trim();
+                }
                 
                 if (!originalTitle) {
                     alert('ไม่พบกิจกรรมที่ต้องการลบ');
@@ -1575,7 +1931,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 try {
                     // Delete activity via API (this will also delete related participants and hour requests on the server)
-                    await apiCall(`/activities/${encodeURIComponent(originalTitle)}`, {
+                    // Encode title properly for URL
+                    const encodedTitle = encodeURIComponent(originalTitle);
+                    console.log('Deleting activity with title:', originalTitle, 'Encoded:', encodedTitle);
+                    await apiCall(`/activities/${encodedTitle}`, {
                         method: 'DELETE'
                     });
 
@@ -1598,8 +1957,13 @@ document.addEventListener('DOMContentLoaded', () => {
             editActivityForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
-                const originalTitle = document.getElementById('edit-activity-original-title').value;
-                const newTitle = document.getElementById('edit-activity-title').value;
+                const originalTitle = document.getElementById('edit-activity-original-title').value.trim();
+                const newTitle = document.getElementById('edit-activity-title').value.trim();
+
+                if (!originalTitle) {
+                    alert('ไม่พบชื่อกิจกรรมเดิม');
+                    return;
+                }
 
                 let imageValue = '';
                 try {
@@ -1625,6 +1989,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     desc: document.getElementById('edit-activity-desc').value,
                     imgUrl: imageValue,
                     formLink: document.getElementById('edit-activity-form-link').value,
+                    tags: getEditSelectedTags(),
                     hours: parseInt(document.getElementById('edit-activity-hours').value) || 0,
                     slots: parseInt(document.getElementById('edit-activity-slots').value) || 10,
                     date: document.getElementById('edit-activity-date').value,
@@ -1635,6 +2000,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
 
                 try {
+                    // Encode title properly for URL
                     await apiCall(`/activities/${encodeURIComponent(originalTitle)}`, {
                         method: 'PUT',
                         body: JSON.stringify(updatedActivity)

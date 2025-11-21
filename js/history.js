@@ -63,6 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
         certificateActivities,
         'ยังไม่มีใบเกียรติบัตรที่พร้อมให้ดาวน์โหลด'
       );
+      renderHoursTracking(activities, requestsMap);
       hideLoading();
     } catch (error) {
       console.error('Error loading history:', error);
@@ -300,7 +301,16 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     localStorage.setItem('spu-certificate-data', JSON.stringify(certificateData));
-    window.location.href = '../admin/main/certificate.html';
+    
+    // สร้าง URL parameters
+    const params = new URLSearchParams({
+      activity: activity.title || '',
+      requestId: request?._id || '',
+      studentId: studentId || ''
+    });
+    
+    // ไปที่หน้า certificate พร้อม URL parameters
+    window.location.href = `../admin/main/certificate.html?${params.toString()}`;
   }
 
   function createStatusBadge(request) {
@@ -388,6 +398,59 @@ document.addEventListener('DOMContentLoaded', () => {
       if (paragraph) {
         paragraph.textContent = message;
       }
+    }
+  }
+
+  function renderHoursTracking(activities, requestsMap) {
+    const maxHours = 72; // ชั่วโมงสูงสุด
+    let onlineHours = 0;
+    let volunteerHours = 0;
+
+    // คำนวณชั่วโมงตาม tags (เฉพาะที่ approved แล้ว)
+    activities.forEach((activity) => {
+      const request = requestsMap.get(activity.title);
+      if (request && request.status === 'approved' && request.hours) {
+        const hours = parseInt(request.hours, 10) || 0;
+        const tags = activity.tags || [];
+        
+        // ตรวจสอบว่ามี tag Online หรือไม่
+        const hasOnline = tags.includes('Online');
+        // ตรวจสอบว่ามี tag จิตอาสาและอื่นๆ หรือไม่
+        const hasVolunteer = tags.includes('จิตอาสาและอื่นๆ') || 
+                            tags.includes('จิตอาสา') || 
+                            tags.includes('และอื่นๆ');
+        
+        // แยกชั่วโมงตาม tags (ถ้ามีทั้ง 2 tags ให้นับทั้ง 2 หลอด)
+        if (hasOnline) {
+          onlineHours += hours;
+        }
+        if (hasVolunteer) {
+          volunteerHours += hours;
+        }
+      }
+    });
+
+    // คำนวณเปอร์เซ็นต์
+    const onlinePercentage = Math.min((onlineHours / maxHours) * 100, 100);
+    const volunteerPercentage = Math.min((volunteerHours / maxHours) * 100, 100);
+
+    // อัปเดต UI
+    const onlineProgressFill = document.getElementById('online-progress-fill');
+    const onlinePercentageEl = document.getElementById('online-percentage');
+    const volunteerProgressFill = document.getElementById('volunteer-progress-fill');
+    const volunteerPercentageEl = document.getElementById('volunteer-percentage');
+
+    if (onlineProgressFill) {
+      onlineProgressFill.style.width = `${onlinePercentage}%`;
+    }
+    if (onlinePercentageEl) {
+      onlinePercentageEl.textContent = `${Math.round(onlinePercentage)}%`;
+    }
+    if (volunteerProgressFill) {
+      volunteerProgressFill.style.width = `${volunteerPercentage}%`;
+    }
+    if (volunteerPercentageEl) {
+      volunteerPercentageEl.textContent = `${Math.round(volunteerPercentage)}%`;
     }
   }
 });

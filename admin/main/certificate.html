@@ -1,42 +1,317 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Certificate - SPU Activity Hub</title>
+    <title>ใบเกียรติบัตร - SPU Activity Hub</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <style>
+        :root {
+            --cert-bg: #f6f5ef;
+            --cert-paper: #fffdf6;
+            --cert-gold: #c79b3f;
+            --cert-text: #1b1c1d;
+            --cert-muted: #5f5f5f;
+            --cert-line: rgba(199, 155, 63, 0.45);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: 'Sarabun', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 12px 120px;
+            color: var(--cert-text);
+        }
+
+        .certificate-shell {
+            width: min(100%, 900px);
+            background: var(--cert-bg);
+            border-radius: 32px;
+            padding: 32px;
+            box-shadow: 0 25px 60px rgba(32,33,36,0.25);
+            position: relative;
+        }
+
+        .certificate-paper {
+            background: var(--cert-paper);
+            border: 16px solid var(--cert-gold);
+            padding: 48px 52px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .certificate-paper::before {
+            content: '';
+            position: absolute;
+            inset: 28px;
+            border: 1px solid rgba(0,0,0,0.08);
+            pointer-events: none;
+        }
+
+        .watermark {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 220px;
+            font-weight: 800;
+            opacity: 0.04;
+            color: #000;
+            letter-spacing: 30px;
+            pointer-events: none;
+        }
+
+        header.certificate-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 36px;
+        }
+
+        header .brand h1 {
+            margin: 0;
+            font-size: 30px;
+            letter-spacing: 5px;
+        }
+
+        header .brand span {
+            font-size: 13px;
+            letter-spacing: 2px;
+            color: var(--cert-muted);
+        }
+
+        header .seal {
+            border: 2px solid var(--cert-gold);
+            padding: 8px 16px;
+            font-size: 11px;
+            letter-spacing: 3px;
+        }
+
+        .title-block {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .title-block h2 {
+            margin: 0;
+            font-size: 46px;
+            letter-spacing: 12px;
+        }
+
+        .title-block p.subtitle {
+            margin: 8px 0 16px;
+            font-size: 15px;
+            letter-spacing: 5px;
+            color: var(--cert-muted);
+        }
+
+        .title-block .divider {
+            width: 240px;
+            height: 3px;
+            background: var(--cert-line);
+            margin: 0 auto;
+        }
+
+        .statement {
+            text-align: center;
+            margin: 32px auto;
+            font-style: italic;
+            color: var(--cert-muted);
+            max-width: 80%;
+            line-height: 1.7;
+        }
+
+        .recipient-name {
+            text-align: center;
+            font-size: 34px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            margin: 18px 0;
+        }
+
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 18px;
+            margin: 32px 0;
+        }
+
+        .metadata-card {
+            border: 1px solid rgba(0,0,0,0.08);
+            padding: 16px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.65);
+        }
+
+        .metadata-card h4 {
+            margin: 0 0 8px;
+            font-size: 12px;
+            letter-spacing: 2px;
+            color: var(--cert-muted);
+        }
+
+        .metadata-card p {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .description-block {
+            margin-top: 24px;
+            color: var(--cert-muted);
+            line-height: 1.8;
+            text-align: center;
+        }
+
+        .signatures {
+            display: flex;
+            justify-content: space-between;
+            gap: 24px;
+            margin-top: 48px;
+        }
+
+        .signature {
+            flex: 1;
+            text-align: center;
+        }
+
+        .signature .line {
+            border-bottom: 1px solid var(--cert-line);
+            width: 80%;
+            margin: 0 auto 12px;
+            height: 40px;
+        }
+
+        .signature strong {
+            display: block;
+            font-size: 15px;
+        }
+
+        .signature span {
+            font-size: 13px;
+            color: var(--cert-muted);
+        }
+
+        .certificate-actions {
+            margin-top: 32px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .cert-btn {
+            border: none;
+            border-radius: 12px;
+            padding: 12px 26px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+        }
+
+        .cert-btn-primary { background: linear-gradient(135deg, #5a67d8, #805ad5); }
+        .cert-btn-secondary { background: linear-gradient(135deg, #f687b3, #ed64a6); }
+        .cert-btn-back { background: #4a5568; }
+        .cert-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        @media (max-width: 768px) {
+            .certificate-shell { padding: 20px; }
+            .certificate-paper { padding: 36px 28px; border-width: 12px; }
+            .signatures { flex-direction: column; }
+        }
+
+        @media print {
+            body { background: #fff; padding: 0; }
+            .certificate-shell { box-shadow: none; padding: 0; margin: 0; }
+            .certificate-paper { border-width: 10px; padding: 36px 32px; }
+            .certificate-actions { display: none; }
+        }
+    </style>
 </head>
-<body class="certificate-page-body">
-     <div class="certificate-container">
-        <div class="corner-decoration top-left"></div>
-        <div class="corner-decoration bottom-right"></div>
-        <div class="certificate-content">
-            <p class="cert-title">CERTIFICATE</p>
-            <p class="cert-subtitle">OF ACHIEVEMENT</p>
-            <div class="cert-line"></div>
-            <p class="cert-text">THIS CERTIFICATE IS STUDENT DEVELOPMENT HOUR BY</p>
-            <p class="cert-name" id="cert-student-name">Muyong Winterfell</p>
-            <p class="cert-text" id="cert-description">This is a student development activity organized by the Faculty of Information Technology, Sripatum University.<br>It is issued as an official certificate to confirm the student's eligibility for activity hour accumulation.</p>
-            <p class="cert-activity-title" id="cert-activity-title"></p>
-            <p class="cert-hours" id="cert-hours"></p>
-            <div class="signatures">
-                <div class="signature"><p class="signature-img">K. Kongkwan</p><p>นาย กะบงกวช คงควรคอย</p><p>ผู้มีอำนาจออกรับรอง</p></div>
-                <div class="signature"><img src="../../img/logo2.png" alt="SPU Logo" class="signature-logo"></div>
-                <div class="signature"><p class="signature-img" id="cert-student-signature">J. Jiewjairung</p><p id="cert-student-name-thai">นาง จีจี้ เยี่ยวสิรุ้ง</p><p>ผู้เข้าร่วมกิจกรรม</p></div>
-            </div>
+<body>
+    <div class="certificate-shell">
+        <div class="certificate-paper">
+            <div class="watermark">SPU</div>
+
+            <header class="certificate-header">
+                <div class="brand">
+                    <h1>Sripatum University</h1>
+                    <span>Student Development Program</span>
+                </div>
+                <div class="seal">OFFICIAL</div>
+            </header>
+
+            <section class="certificate-content">
+                <div class="title-block">
+                    <h2>CERTIFICATE</h2>
+                    <p class="subtitle">OF ACHIEVEMENT</p>
+                    <div class="divider"></div>
+                </div>
+
+                <p class="statement">
+                    This certificate is issued to recognize the completion of an approved student development activity,
+                    and to confirm the allocation of official service-learning hours.
+                </p>
+
+                <p class="recipient-name" id="cert-student-name">ชื่อผู้รับใบเกียรติบัตร</p>
+
+                <div class="metadata-grid">
+                    <article class="metadata-card">
+                        <h4>ACTIVITY</h4>
+                        <p id="cert-activity-title">กิจกรรม: -</p>
+                    </article>
+                    <article class="metadata-card">
+                        <h4>HOURS ACCRUED</h4>
+                        <p id="cert-hours">จำนวนชั่วโมง: 0 ชั่วโมง</p>
+                    </article>
+                    <article class="metadata-card">
+                        <h4>STUDENT ID</h4>
+                        <p id="cert-student-name-thai">-</p>
+                    </article>
+                </div>
+
+                <div class="description-block" id="cert-description">
+                    ใบรับรองฉบับนี้ออกให้เพื่อยืนยันว่าผู้เข้าร่วมกิจกรรมได้สะสมชั่วโมงจิตอาสาตามที่มหาวิทยาลัยกำหนด
+                    และผ่านการอนุมัติจากผู้มีอำนาจเรียบร้อยแล้ว
+                </div>
+
+                <div class="signatures">
+                    <div class="signature">
+                        <div class="line"></div>
+                        <strong>K. Kongkwan</strong>
+                        <span>ผู้มีอำนาจออกใบรับรอง</span>
+                    </div>
+                    <div class="signature">
+                        <div class="line"></div>
+                        <strong id="cert-student-signature">J. Student</strong>
+                        <span>ผู้เข้าร่วมกิจกรรม</span>
+                    </div>
+                </div>
+            </section>
         </div>
     </div>
+
     <div class="certificate-actions">
-        <button type="button" id="download-image-btn" class="cert-btn cert-btn-primary">
-            <i class="fas fa-download"></i> ดาวน์โหลดเป็นภาพ
-        </button>
-        <button type="button" id="download-pdf-btn" class="cert-btn cert-btn-secondary">
-            <i class="fas fa-file-pdf"></i> ดาวน์โหลดเป็น PDF
-        </button>
+        <a href="index.html" class="cert-btn cert-btn-back"><i class="fas fa-home"></i> หน้าหลัก</a>
+        <button id="download-image-btn" class="cert-btn cert-btn-primary"><i class="fas fa-image"></i> ดาวน์โหลดเป็นภาพ</button>
+        <button id="download-pdf-btn" class="cert-btn cert-btn-secondary"><i class="fas fa-file-pdf"></i> ดาวน์โหลด PDF</button>
     </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
+

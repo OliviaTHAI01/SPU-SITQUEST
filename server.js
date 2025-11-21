@@ -173,6 +173,7 @@ const activitySchema = new mongoose.Schema({
   desc: { type: String, default: '' },
   imgUrl: { type: String, default: '' },
   formLink: { type: String, default: '' },
+  tags: { type: [String], default: [] },
   hours: { type: Number, default: 0 },
   slots: { type: Number, default: 10 },
   date: { type: String, default: '' },
@@ -293,7 +294,11 @@ app.get('/api/activities/:title', async (req, res) => {
   }
   
   try {
-    const activity = await Activity.findOne({ title: req.params.title });
+    // Decode URL parameter to handle special characters
+    let title = decodeURIComponent(req.params.title);
+    title = title.trim();
+    
+    const activity = await Activity.findOne({ title: title });
     if (!activity) {
       return res.status(404).json({ error: 'Activity not found' });
     }
@@ -321,7 +326,11 @@ app.post('/api/activities', async (req, res) => {
 // Update activity
 app.put('/api/activities/:title', async (req, res) => {
   try {
-    const originalTitle = req.params.title;
+    // Decode URL parameter to handle special characters
+    let originalTitle = decodeURIComponent(req.params.title);
+    // Remove any leading/trailing spaces
+    originalTitle = originalTitle.trim();
+    
     const requestedTitle = typeof req.body.title === 'string' ? req.body.title.trim() : originalTitle;
 
     if (!requestedTitle) {
@@ -371,15 +380,42 @@ app.put('/api/activities/:title', async (req, res) => {
 // Delete activity
 app.delete('/api/activities/:title', async (req, res) => {
   try {
-    const activity = await Activity.findOneAndDelete({ title: req.params.title });
+    // Decode URL parameter to handle special characters
+    let title = decodeURIComponent(req.params.title);
+    title = title.trim();
+    
+    console.log('DELETE request - Original param:', req.params.title, 'Decoded:', title);
+    
+    // Try to find activity with exact title match
+    let activity = await Activity.findOne({ title: title });
+    
+    // If not found, try without trim (in case of whitespace issues)
     if (!activity) {
-      return res.status(404).json({ error: 'Activity not found' });
+      activity = await Activity.findOne({ title: req.params.title });
     }
+    
+    // If still not found, try case-insensitive search
+    if (!activity) {
+      activity = await Activity.findOne({ 
+        title: { $regex: new RegExp(`^${title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
+      });
+    }
+    
+    if (!activity) {
+      console.log('Activity not found. Available activities:', await Activity.find({}, 'title'));
+      return res.status(404).json({ error: 'Activity not found', searchedTitle: title });
+    }
+    
+    // Delete the activity
+    await Activity.findOneAndDelete({ _id: activity._id });
+    
     // Also delete related participants and hour requests
-    await Participant.deleteMany({ activityTitle: req.params.title });
-    await HourRequest.deleteMany({ activityTitle: req.params.title });
+    await Participant.deleteMany({ activityTitle: activity.title });
+    await HourRequest.deleteMany({ activityTitle: activity.title });
+    
     res.json({ message: 'Activity deleted successfully' });
   } catch (error) {
+    console.error('Error deleting activity:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -387,6 +423,10 @@ app.delete('/api/activities/:title', async (req, res) => {
 // Archive activity
 app.post('/api/activities/:title/archive', async (req, res) => {
   try {
+    // Decode URL parameter to handle special characters
+    let title = decodeURIComponent(req.params.title);
+    title = title.trim();
+    
     // Format date as Thai date string
     const now = new Date();
     const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 
@@ -394,7 +434,7 @@ app.post('/api/activities/:title/archive', async (req, res) => {
     const archivedDateStr = `${now.getDate()} ${thaiMonths[now.getMonth()]} ${now.getFullYear() + 543} เวลา ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} น.`;
     
     const activity = await Activity.findOneAndUpdate(
-      { title: req.params.title },
+      { title: title },
       { 
         isArchived: true, 
         archivedDate: archivedDateStr,
@@ -414,8 +454,12 @@ app.post('/api/activities/:title/archive', async (req, res) => {
 // Restore activity
 app.post('/api/activities/:title/restore', async (req, res) => {
   try {
+    // Decode URL parameter to handle special characters
+    let title = decodeURIComponent(req.params.title);
+    title = title.trim();
+    
     const activity = await Activity.findOneAndUpdate(
-      { title: req.params.title },
+      { title: title },
       { 
         isArchived: false, 
         archivedDate: '',

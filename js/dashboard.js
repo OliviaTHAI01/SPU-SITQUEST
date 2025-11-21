@@ -300,96 +300,117 @@ document.addEventListener("DOMContentLoaded", () => {
   // โหลดข้อมูลผู้ใช้เมื่อหน้าโหลด
   loadStudentInfo();
   
-  // ฟังก์ชันคำนวณชั่วโมงทั้งหมดจากกิจกรรมที่ admin อนุมัติแล้วเท่านั้น
-  async function calculateTotalHours() {
+  // ฟังก์ชันคำนวณชั่วโมงแยกตาม tags (แสดงเฉพาะที่ approved แล้ว)
+  async function calculateHoursByTags() {
     try {
       const studentId = localStorage.getItem('studentId') || '68000000';
       
       if (!ENABLE_DATABASE) {
-        return 0;
+        return { onlineHours: 0, volunteerHours: 0 };
       }
       
       try {
-        const requests = await apiCall(`/hour-requests/student/${encodeURIComponent(studentId)}`);
+        const [requests, activities] = await Promise.all([
+          apiCall(`/hour-requests/student/${encodeURIComponent(studentId)}`).catch(() => []),
+          apiCall('/activities?includeArchived=true').catch(() => [])
+        ]);
         
-        let totalHours = 0;
+        let onlineHours = 0;
+        let volunteerHours = 0;
+        
+        // สร้าง map ของ activities โดยใช้ title เป็น key
+        const activityMap = new Map();
+        if (Array.isArray(activities)) {
+          activities.forEach(activity => {
+            activityMap.set(activity.title, activity);
+          });
+        }
         
         // คำนวณชั่วโมงจากกิจกรรมที่ admin อนุมัติแล้วเท่านั้น (status = 'approved')
         if (Array.isArray(requests)) {
           requests.forEach(request => {
             if (request.status === 'approved' && request.hours) {
-              totalHours += parseInt(request.hours, 10);
+              const hours = parseInt(request.hours, 10) || 0;
+              const activity = activityMap.get(request.activityTitle);
+              
+              if (activity) {
+                const tags = activity.tags || [];
+                // ตรวจสอบว่ามี tag Online หรือไม่
+                const hasOnline = tags.includes('Online');
+                // ตรวจสอบว่ามี tag จิตอาสาและอื่นๆ หรือไม่
+                const hasVolunteer = tags.includes('จิตอาสาและอื่นๆ') || 
+                                    tags.includes('จิตอาสา') || 
+                                    tags.includes('และอื่นๆ');
+                
+                // แยกชั่วโมงตาม tags (ถ้ามีทั้ง 2 tags ให้นับทั้ง 2 หลอด)
+                if (hasOnline) {
+                  onlineHours += hours;
+                }
+                if (hasVolunteer) {
+                  volunteerHours += hours;
+                }
+              }
             }
           });
         }
         
-        return totalHours;
+        return { onlineHours, volunteerHours };
       } catch (error) {
         // ถ้าไม่พบข้อมูล (404) หรือไม่มีข้อมูล ให้ return 0
         if (error.message.includes('404')) {
-          return 0;
+          return { onlineHours: 0, volunteerHours: 0 };
         }
         throw error;
       }
     } catch (error) {
-      console.error('Error calculating total hours:', error);
-      return 0;
+      console.error('Error calculating hours by tags:', error);
+      return { onlineHours: 0, volunteerHours: 0 };
     }
   }
   
   // 1. กำหนดค่า
   const maxHours = 72; // ชั่วโมงสูงสุด
-  let currentHours = 0;
-  let percentage = 0;
+  let onlineHours = 0;
+  let volunteerHours = 0;
   
-  // คำนวณชั่วโมงจากกิจกรรมที่ join แล้ว (async)
-  calculateTotalHours().then(hours => {
-    currentHours = hours;
-    percentage = Math.min((currentHours / maxHours) * 100, 100);
-    updateProgressCircle();
+  // คำนวณชั่วโมงแยกตาม tags (async)
+  calculateHoursByTags().then(({ onlineHours: online, volunteerHours: volunteer }) => {
+    onlineHours = online;
+    volunteerHours = volunteer;
+    updateProgressBars();
   });
 
-  // 2. อ้างอิง Element
-  const progressCircle = document.querySelector(".circular-progress .fg");
-  const percentageText = document.querySelector(".percentage");
-  const hoursText = document.querySelector(".hours-text");
+  // 2. อ้างอิง Element (Progress Bars แนวนอน)
+  const onlineProgressFill = document.getElementById('dashboard-online-progress-fill');
+  const onlinePercentageText = document.getElementById('dashboard-online-percentage');
+  const volunteerProgressFill = document.getElementById('dashboard-volunteer-progress-fill');
+  const volunteerPercentageText = document.getElementById('dashboard-volunteer-percentage');
 
-  // 3. ฟังก์ชันอัปเดต Progress Circle
-  function updateProgressCircle() {
-    if (progressCircle && percentageText && hoursText) {
-      // คำนวณค่าทางคณิตศาสตร์ (สำหรับ Progress Bar)
-      const radius = 60; // รัศมี r="60" จาก HTML
-      const circumference = 2 * Math.PI * radius; // สูตร 2 * pi * r
-
-      // คำนวณค่า Offset
-      const offset = circumference - (percentage / 100) * circumference;
-
-      // อัปเดต SVG
-      progressCircle.style.strokeDasharray = circumference;
-      progressCircle.style.strokeDashoffset = offset;
-
-      // อัปเดตข้อความ
-      percentageText.textContent = `${Math.round(percentage)}%`;
-      hoursText.textContent = `${currentHours} / ${maxHours} Hours`;
+  // 3. ฟังก์ชันอัปเดต Progress Bars
+  function updateProgressBars() {
+    const onlinePercentage = Math.min((onlineHours / maxHours) * 100, 100);
+    const volunteerPercentage = Math.min((volunteerHours / maxHours) * 100, 100);
+    
+    if (onlineProgressFill && onlinePercentageText) {
+      onlineProgressFill.style.width = `${onlinePercentage}%`;
+      onlinePercentageText.textContent = `${Math.round(onlinePercentage)}%`;
+    }
+    
+    if (volunteerProgressFill && volunteerPercentageText) {
+      volunteerProgressFill.style.width = `${volunteerPercentage}%`;
+      volunteerPercentageText.textContent = `${Math.round(volunteerPercentage)}%`;
     }
   }
   
-  // อัปเดต Progress Circle ครั้งแรก
-  updateProgressCircle();
+  // อัปเดต Progress Bars ครั้งแรก
+  updateProgressBars();
   
   // Export function สำหรับอัปเดตจากภายนอก
   window.updateDashboardProgress = async function() {
-    currentHours = await calculateTotalHours();
-    const newPercentage = Math.min((currentHours / maxHours) * 100, 100);
-    if (progressCircle && percentageText && hoursText) {
-      const radius = 60;
-      const circumference = 2 * Math.PI * radius;
-      const offset = circumference - (newPercentage / 100) * circumference;
-      progressCircle.style.strokeDasharray = circumference;
-      progressCircle.style.strokeDashoffset = offset;
-      percentageText.textContent = `${Math.round(newPercentage)}%`;
-      hoursText.textContent = `${currentHours} / ${maxHours} Hours`;
-    }
+    const { onlineHours: online, volunteerHours: volunteer } = await calculateHoursByTags();
+    onlineHours = online;
+    volunteerHours = volunteer;
+    updateProgressBars();
   };
 
   // ----------------------------------------------------
@@ -456,6 +477,10 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       
+      // ดึงข้อมูล studentId เพื่อตรวจสอบการเข้าร่วม
+      const studentInfo = JSON.parse(localStorage.getItem('spu-student-info') || '{}');
+      const studentId = studentInfo.studentId || localStorage.getItem('studentId') || '68000000';
+      
       // รอข้อมูล participants สำหรับทุกกิจกรรม
       for (const activity of activities) {
         const participants = await getActivityParticipants(activity.title);
@@ -465,7 +490,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const participantsCount = participants.length;
         const maxSlots = parseInt(activity.slots, 10) || 10;
         const progressPercent = maxSlots > 0 ? (participantsCount / maxSlots) * 100 : 0;
-        const isJoined = joinedActivities.includes(activity.title);
+        
+        // ตรวจสอบว่าผู้ใช้เข้าร่วมแล้วหรือไม่จาก participants API
+        const isJoined = participants.some(p => p.studentId === studentId) || joinedActivities.includes(activity.title);
         const isFull = participantsCount >= maxSlots;
       
       // Format date
@@ -483,29 +510,41 @@ document.addEventListener("DOMContentLoaded", () => {
       
       const cardHTML = `
         <div class="activity-card ${isFull ? 'full-card' : ''}" data-title="${activity.title}">
-          <a href="activity.html?title=${encodeURIComponent(activity.title)}" class="card-image-link" style="display: block; cursor: pointer;">
+          <a href="activity.html?title=${encodeURIComponent(activity.title)}" class="card-image-link">
             <img src="${activity.imgUrl || ''}" alt="${activity.title}" class="card-image" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22225%22%3E%3Crect width=%22400%22 height=%22225%22 fill=%22%23f0f0f0%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-size=%2218%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22%3Eไม่มีรูปภาพ%3C/text%3E%3C/svg%3E';" />
           </a>
           <div class="progress-bar-container">
             <div class="progress-bar" style="width: ${progressPercent}%"></div>
           </div>
           <div class="card-info">
-            <p class="progress-text">${participantsCount}/${maxSlots}</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <p class="progress-text">${participantsCount}/${maxSlots}</p>
+            </div>
             <p class="card-title">${activity.title}</p>
-            <p class="card-subtitle">${activity.desc || 'กิจกรรมพัฒนาผู้เรียน'}</p>
+            ${activity.desc ? `<p class="card-subtitle">${activity.desc}</p>` : ''}
+            ${activity.tags && activity.tags.length > 0 ? `
+            <div class="card-tags">
+              ${activity.tags.map(tag => {
+                let tagClass = 'tag-custom';
+                if (tag === 'Online') tagClass = 'tag-online';
+                else if (tag === 'จิตอาสาและอื่นๆ' || tag === 'จิตอาสา' || tag === 'และอื่นๆ') tagClass = 'tag-volunteer';
+                return `<span class="card-tag ${tagClass}">${tag === 'จิตอาสา' || tag === 'และอื่นๆ' ? 'จิตอาสาและอื่นๆ' : tag}</span>`;
+              }).join('')}
+            </div>
+            ` : ''}
             <p class="card-time">${activity.hours || 4} hours</p>
-            ${dateDisplay ? `<p class="card-date" style="color: #666; font-size: 0.85rem; margin-top: 0.25rem;"><i class="fas fa-calendar-alt"></i> ${dateDisplay}</p>` : ''}
-            <p class="card-desc">${activity.desc || 'เป็นกิจกรรมสะสมชั่วโมงเพื่อให้อาจารย์และเพื่อนนักศึกษารับรู้ในทุกด้าน'}</p>
-            ${activity.location ? `<p class="card-location" style="color: #666; font-size: 0.85rem; margin-top: 0.5rem;"><i class="fas fa-map-marker-alt"></i> ${activity.location}</p>` : ''}
+            ${dateDisplay ? `<p class="card-date"><i class="fas fa-calendar-alt"></i> ${dateDisplay}</p>` : ''}
+            ${activity.location ? `<p class="card-location"><i class="fas fa-map-marker-alt"></i> ${activity.location}</p>` : ''}
             ${activity.lat && activity.lng ? 
-              `<a href="https://www.google.com/maps/dir/?api=1&destination=${activity.lat},${activity.lng}" target="_blank" class="navigate-btn" style="display: inline-block; margin-top: 8px; padding: 6px 12px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; font-size: 0.85rem;">
+              `<a href="https://www.google.com/maps/dir/?api=1&destination=${activity.lat},${activity.lng}" target="_blank" class="navigate-btn">
                 <i class="fas fa-directions"></i> นำทาง
               </a>` : ''
             }
+            <p class="card-desc">${activity.desc || 'เป็นกิจกรรมสะสมชั่วโมงเพื่อให้อาจารย์และเพื่อนนักศึกษารับรู้ในทุกด้าน'}</p>
             ${isJoined ? 
-              '<button class="join-button" disabled style="background-color: #6c757d; cursor: not-allowed;">เข้าร่วมแล้ว</button>' :
+              '<button class="join-button joined-button" disabled><i class="fas fa-check-circle"></i> เข้าร่วมแล้ว</button>' :
               isFull ?
-              '<button class="join-button full-button" disabled>Full</button>' :
+              '<button class="join-button full-button" disabled><i class="fas fa-times-circle"></i> Full</button>' :
               `<a href="activity.html?title=${encodeURIComponent(activity.title)}" class="join-link">
                 <button class="join-button">Join Activity</button>
               </a>`
@@ -588,7 +627,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const findNearestBtn = document.getElementById('find-nearest-btn');
     if (findNearestBtn) {
       findNearestBtn.disabled = true;
-      findNearestBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังค้นหา...';
+      findNearestBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>กำลังค้นหา...</span>';
     }
     
     navigator.geolocation.getCurrentPosition(
@@ -622,7 +661,7 @@ document.addEventListener("DOMContentLoaded", () => {
           
           if (findNearestBtn) {
             findNearestBtn.disabled = false;
-            findNearestBtn.innerHTML = '<i class="fas fa-map-marker-alt"></i> ค้นหากิจกรรมที่ใกล้ที่สุด';
+            findNearestBtn.innerHTML = '<i class="fas fa-map-marker-alt"></i><span>ค้นหากิจกรรมที่ใกล้ที่สุด</span>';
           }
           
           if (activitiesWithDistance.length > 0) {
@@ -644,7 +683,7 @@ document.addEventListener("DOMContentLoaded", () => {
         alert('ไม่สามารถระบุตำแหน่งได้: ' + error.message);
         if (findNearestBtn) {
           findNearestBtn.disabled = false;
-          findNearestBtn.innerHTML = '<i class="fas fa-map-marker-alt"></i> ค้นหากิจกรรมที่ใกล้ที่สุด';
+          findNearestBtn.innerHTML = '<i class="fas fa-map-marker-alt"></i><span>ค้นหากิจกรรมที่ใกล้ที่สุด</span>';
         }
       }
     );
@@ -670,6 +709,10 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     
+    // ดึงข้อมูล studentId เพื่อตรวจสอบการเข้าร่วม
+    const studentInfo = JSON.parse(localStorage.getItem('spu-student-info') || '{}');
+    const studentId = studentInfo.studentId || localStorage.getItem('studentId') || '68000000';
+    
     // รอข้อมูล participants สำหรับทุกกิจกรรม
     for (const activity of activities) {
       const participants = await getActivityParticipants(activity.title);
@@ -679,7 +722,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const participantsCount = participants.length;
       const maxSlots = parseInt(activity.slots, 10) || 10;
       const progressPercent = maxSlots > 0 ? (participantsCount / maxSlots) * 100 : 0;
-      const isJoined = joinedActivities.includes(activity.title);
+      
+      // ตรวจสอบว่าผู้ใช้เข้าร่วมแล้วหรือไม่จาก participants API
+      const isJoined = participants.some(p => p.studentId === studentId) || joinedActivities.includes(activity.title);
       const isFull = participantsCount >= maxSlots;
       
       // Format date
@@ -706,6 +751,16 @@ document.addEventListener("DOMContentLoaded", () => {
             <p class="progress-text">${participantsCount}/${maxSlots}</p>
             <p class="card-title">${activity.title}</p>
             <p class="card-subtitle">${activity.desc || 'กิจกรรมพัฒนาผู้เรียน'}</p>
+            ${activity.tags && activity.tags.length > 0 ? `
+            <div class="card-tags" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; margin-bottom: 0.5rem;">
+              ${activity.tags.map(tag => {
+                let tagClass = 'tag-custom';
+                if (tag === 'Online') tagClass = 'tag-online';
+                else if (tag === 'จิตอาสาและอื่นๆ' || tag === 'จิตอาสา' || tag === 'และอื่นๆ') tagClass = 'tag-volunteer';
+                return `<span class="card-tag ${tagClass}" style="display: inline-flex; align-items: center; padding: 0.3rem 0.7rem; border-radius: 15px; font-size: 0.75rem; font-weight: 600; color: white;">${tag === 'จิตอาสา' || tag === 'และอื่นๆ' ? 'จิตอาสาและอื่นๆ' : tag}</span>`;
+              }).join('')}
+            </div>
+            ` : ''}
             <p class="card-time">${activity.hours || 4} hours</p>
             ${dateDisplay ? `<p class="card-date" style="color: #666; font-size: 0.85rem; margin-top: 0.25rem;"><i class="fas fa-calendar-alt"></i> ${dateDisplay}</p>` : ''}
             <p class="card-desc">${activity.desc || 'เป็นกิจกรรมสะสมชั่วโมงเพื่อให้อาจารย์และเพื่อนนักศึกษารับรู้ในทุกด้าน'}</p>
@@ -717,7 +772,7 @@ document.addEventListener("DOMContentLoaded", () => {
               </a>` : ''
             }
             ${isJoined ? 
-              '<button class="join-button" disabled style="background-color: #6c757d; cursor: not-allowed;">เข้าร่วมแล้ว</button>' :
+              '<button class="join-button joined-button" disabled><i class="fas fa-check-circle"></i> เข้าร่วมแล้ว</button>' :
               isFull ?
               '<button class="join-button full-button" disabled>Full</button>' :
               `<a href="activity.html?title=${encodeURIComponent(activity.title)}" class="join-link">
@@ -739,6 +794,154 @@ document.addEventListener("DOMContentLoaded", () => {
   const findNearestBtn = document.getElementById('find-nearest-btn');
   if (findNearestBtn) {
     findNearestBtn.addEventListener('click', findNearestActivities);
+  }
+
+  // Event listener for ongoing activities button
+  const ongoingBtn = document.getElementById('ongoing-activities-btn');
+  if (ongoingBtn) {
+    ongoingBtn.addEventListener('click', () => {
+      window.location.href = 'history.html#ongoing-panel';
+    });
+  }
+
+  // Event listener for activity history button
+  const historyBtn = document.getElementById('activity-history-btn');
+  if (historyBtn) {
+    historyBtn.addEventListener('click', () => {
+      window.location.href = 'history.html';
+    });
+  }
+
+  // Hours Info Modal
+  const hoursInfoModal = document.getElementById('hours-info-modal');
+  const hoursInfoBtn = document.getElementById('hours-info-btn');
+
+  // Open hours info modal
+  if (hoursInfoBtn && hoursInfoModal) {
+    hoursInfoBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      hoursInfoModal.classList.add('active');
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    });
+  }
+
+  // Close modal function
+  function closeHoursInfoModal() {
+    if (hoursInfoModal) {
+      hoursInfoModal.classList.remove('active');
+      document.body.style.overflow = ''; // Restore scrolling
+    }
+  }
+
+  // Close modal buttons
+  const modalCloseBtns = document.querySelectorAll('.info-modal-close, .info-modal-close-btn');
+  if (modalCloseBtns.length > 0) {
+    modalCloseBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeHoursInfoModal();
+      });
+    });
+  }
+
+  // Close modal when clicking outside
+  if (hoursInfoModal) {
+    hoursInfoModal.addEventListener('click', (e) => {
+      if (e.target === hoursInfoModal) {
+        closeHoursInfoModal();
+      }
+    });
+  }
+
+  // Close modal with Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (hoursInfoModal && hoursInfoModal.classList.contains('active')) {
+        closeHoursInfoModal();
+      }
+      if (formDownloadModal && formDownloadModal.classList.contains('active')) {
+        closeFormDownloadModal();
+      }
+    }
+  });
+
+  // Form Download Modal
+  const formDownloadModal = document.getElementById('form-download-modal');
+  const loadFormBtn = document.getElementById('load-form-btn');
+
+  // Open form download modal
+  if (loadFormBtn && formDownloadModal) {
+    loadFormBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      formDownloadModal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    });
+  }
+
+  // Close form download modal function
+  function closeFormDownloadModal() {
+    if (formDownloadModal) {
+      formDownloadModal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  }
+
+  // Close form download modal buttons
+  const formModalCloseBtns = formDownloadModal ? formDownloadModal.querySelectorAll('.info-modal-close, .info-modal-close-btn') : [];
+  if (formModalCloseBtns.length > 0) {
+    formModalCloseBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeFormDownloadModal();
+      });
+    });
+  }
+
+  // Close form download modal when clicking outside
+  if (formDownloadModal) {
+    formDownloadModal.addEventListener('click', (e) => {
+      if (e.target === formDownloadModal) {
+        closeFormDownloadModal();
+      }
+    });
+  }
+
+  // Handle form download buttons
+  const downloadFormBtns = document.querySelectorAll('.download-form-btn');
+  downloadFormBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const formType = btn.getAttribute('data-form');
+      downloadForm(formType);
+    });
+  });
+
+  // Function to download form
+  function downloadForm(formType) {
+    // กำหนด URL ของแบบฟอร์มแต่ละประเภท
+    const formUrls = {
+      'activity-hours-form': '/forms/activity-hours-form.pdf',
+      'activity-report-form': '/forms/activity-report-form.docx',
+      'activity-summary-form': '/forms/activity-summary-form.xlsx'
+    };
+
+    const formUrl = formUrls[formType];
+    
+    if (formUrl) {
+      // สร้าง link element เพื่อดาวน์โหลด
+      const link = document.createElement('a');
+      link.href = formUrl;
+      link.download = formType + (formUrl.includes('.pdf') ? '.pdf' : formUrl.includes('.docx') ? '.docx' : '.xlsx');
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // แสดงข้อความแจ้งเตือน
+      alert('กำลังดาวน์โหลดแบบฟอร์ม...\n\nหากไม่มีการดาวน์โหลดอัตโนมัติ กรุณาตรวจสอบการตั้งค่าเบราว์เซอร์ของคุณ');
+    } else {
+      alert('ไม่พบแบบฟอร์มที่ต้องการ กรุณาติดต่อผู้ดูแลระบบ');
+    }
   }
   
   const searchInput = document.getElementById("searchInput");

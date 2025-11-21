@@ -8,6 +8,7 @@
   --history-warning: #ffc107;
   --history-danger: #dc3545;
   --history-blue: #007bff;
+  --hours-bg-dark: #3e4451;
 }
 
 body {
@@ -17,14 +18,31 @@ body {
 .history-page {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 40px 20px 80px;
+  padding: 20px 16px 60px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .history-page {
+    padding: 16px 12px 40px;
+  }
 }
 
 .history-header {
   display: flex;
-  align-items: center;
-  gap: 20px;
-  margin-bottom: 24px;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .history-header {
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
 }
 
 .history-header .back-to-dashboard-btn {
@@ -39,50 +57,139 @@ body {
   font-weight: 600;
   text-decoration: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .history-header .back-to-dashboard-btn {
+    padding: 8px 14px;
+    font-size: 14px;
+  }
 }
 
 .history-header .back-to-dashboard-btn i {
   color: var(--history-blue);
 }
 
+.history-title-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+
 .history-title-wrapper h1 {
   font-size: 28px;
   color: var(--history-text);
   margin-bottom: 6px;
+  word-wrap: break-word;
+  line-height: 1.3;
 }
 
 .history-subtitle {
   color: var(--history-muted);
   font-size: 15px;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+@media (max-width: 768px) {
+  .history-title-wrapper h1 {
+    font-size: 22px;
+    margin-bottom: 4px;
+  }
+
+  .history-subtitle {
+    font-size: 13px;
+  }
 }
 
 .history-tabs {
-  display: inline-flex;
+  display: flex;
   border: 1px solid var(--history-border);
   border-radius: 999px;
   padding: 4px;
   background-color: #fff;
   margin-bottom: 24px;
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.history-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .history-tabs {
+    margin-bottom: 16px;
+    border-radius: 12px;
+    padding: 3px;
+  }
 }
 
 .history-tab-button {
   border: none;
   background: transparent;
-  padding: 10px 24px;
+  padding: 10px 20px;
   border-radius: 999px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--history-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .history-tab-button i {
-  font-size: 16px;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .history-tab-button {
+    padding: 8px 12px;
+    font-size: 12px;
+    gap: 4px;
+  }
+
+  .history-tab-button i {
+    font-size: 12px;
+  }
+
+  /* แสดงเฉพาะไอคอนในมือถือ แต่แสดงข้อความเมื่อ active */
+  .history-tab-button span {
+    display: none;
+  }
+
+  .history-tab-button.active span {
+    display: inline;
+    margin-left: 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .history-tab-button {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+
+  .history-tab-button span {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .history-tab-button {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
 }
 
 .history-tab-button.active {
@@ -142,19 +249,38 @@ body {
 
 .history-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .history-list {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 }
 
 .history-card {
   background-color: var(--history-card);
   border: 1px solid var(--history-border);
   border-radius: 14px;
-  padding: 20px;
+  padding: 16px;
   box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
   display: flex;
   flex-direction: column;
   gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .history-card {
+    padding: 14px;
+    gap: 10px;
+    border-radius: 12px;
+  }
 }
 
 .history-card-header {
@@ -168,6 +294,14 @@ body {
   font-size: 18px;
   font-weight: 700;
   color: var(--history-text);
+  word-wrap: break-word;
+  line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+  .history-card-title {
+    font-size: 16px;
+  }
 }
 
 .history-status-badge {
@@ -199,6 +333,14 @@ body {
   gap: 6px;
   font-size: 14px;
   color: var(--history-muted);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.history-meta-line {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.5;
 }
 
 .history-meta-line i {
@@ -209,8 +351,21 @@ body {
 .history-card-actions {
   display: flex;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .history-card-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .history-card-actions a,
+  .history-card-actions button {
+    width: 100%;
+  }
 }
 
 .history-card-actions a {
@@ -221,6 +376,9 @@ body {
   padding: 10px;
   font-weight: 600;
   font-size: 14px;
+  min-width: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .history-card-actions button {
@@ -272,19 +430,205 @@ body {
   margin-bottom: 12px;
 }
 
+/* Hours Tracking Section */
+.hours-tracking-container {
+  background-color: var(--hours-bg-dark);
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
 @media (max-width: 768px) {
+  .hours-tracking-container {
+    padding: 16px;
+    border-radius: 12px;
+  }
+}
+
+.hours-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 24px;
+  text-align: center;
+  line-height: 1.4;
+  word-wrap: break-word;
+  padding: 0 8px;
+}
+
+@media (max-width: 768px) {
+  .hours-section-title {
+    font-size: 16px;
+    margin-bottom: 20px;
+    padding: 0 4px;
+  }
+}
+
+.hours-progress-section {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.hours-progress-item {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hours-progress-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .hours-progress-bar-container {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+}
+
+.hours-progress-bar {
+  flex: 1;
+  height: 28px;
+  background-color: #ffffff;
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.hours-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #007bff 0%, #0056b3 100%);
+  border-radius: 14px;
+  transition: width 0.6s ease;
+  width: 0%;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+.hours-progress-percentage {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  min-width: 45px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .hours-progress-percentage {
+    font-size: 14px;
+    min-width: 40px;
+  }
+}
+
+.hours-progress-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .history-state-cards {
+    margin-bottom: 16px;
+  }
+
+  .history-state-card {
+    min-width: 100%;
+    padding: 12px 16px;
+  }
+
+  .history-metas {
+    font-size: 13px;
+  }
+
+  .history-meta-line {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .history-empty-state {
+    padding: 24px 16px;
+  }
+
+  .history-empty-state i {
+    font-size: 32px;
+  }
+
+  .hours-progress-section {
+    gap: 20px;
+  }
+
+  .hours-progress-item {
+    gap: 10px;
+  }
+
+  .hours-progress-bar {
+    height: 24px;
+  }
+
+  .hours-progress-label {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .history-page {
+    padding: 12px 8px 32px;
+  }
+
   .history-header {
-    flex-direction: column;
-    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .history-title-wrapper h1 {
+    font-size: 20px;
+  }
+
+  .history-subtitle {
+    font-size: 12px;
   }
 
   .history-tabs {
-    width: 100%;
-    justify-content: space-between;
+    margin-bottom: 12px;
   }
 
-  .history-list {
-    grid-template-columns: 1fr;
+  .history-card {
+    padding: 12px;
+  }
+
+  .history-card-title {
+    font-size: 15px;
+  }
+
+  .hours-tracking-container {
+    padding: 12px;
+  }
+
+  .hours-section-title {
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+
+  .hours-progress-bar {
+    height: 20px;
+  }
+
+  .hours-progress-percentage {
+    font-size: 12px;
+    min-width: 35px;
+  }
+
+  .hours-progress-label {
+    font-size: 12px;
   }
 }
 

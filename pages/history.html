@@ -35,7 +35,7 @@
           role="tab"
         >
           <i class="fas fa-hourglass-half"></i>
-          กำลังเข้าร่วม
+          <span>กำลังเข้าร่วม</span>
         </button>
         <button
           class="history-tab-button"
@@ -45,7 +45,7 @@
           role="tab"
         >
           <i class="fas fa-check-circle"></i>
-          กิจกรรมที่สำเร็จ
+          <span>กิจกรรมที่สำเร็จ</span>
         </button>
         <button
           class="history-tab-button"
@@ -55,7 +55,17 @@
           role="tab"
         >
           <i class="fas fa-award"></i>
-          ประวัติใบเกียรติบัตร
+          <span>ประวัติใบเกียรติบัตร</span>
+        </button>
+        <button
+          class="history-tab-button"
+          data-target="hours-panel"
+          aria-controls="hours-panel"
+          aria-selected="false"
+          role="tab"
+        >
+          <i class="fas fa-clock"></i>
+          <span>เก็บชั่วโมง</span>
         </button>
       </section>
 
@@ -100,6 +110,37 @@
         aria-labelledby="tab-certificate"
       >
         <div class="history-list" id="certificate-list"></div>
+      </section>
+
+      <section
+        id="hours-panel"
+        class="history-panel"
+        role="tabpanel"
+        aria-labelledby="tab-hours"
+      >
+        <div class="hours-tracking-container">
+          <h2 class="hours-section-title">ชั่วโมงกิจกรรมประเภท : กิจกรรมจิตสาธารณะ กยศ.</h2>
+          <div class="hours-progress-section">
+            <div class="hours-progress-item">
+              <div class="hours-progress-bar-container">
+                <div class="hours-progress-bar" id="online-progress-bar">
+                  <div class="hours-progress-fill" id="online-progress-fill"></div>
+                </div>
+                <span class="hours-progress-percentage" id="online-percentage">0%</span>
+              </div>
+              <p class="hours-progress-label">กิจกรรม Online</p>
+            </div>
+            <div class="hours-progress-item">
+              <div class="hours-progress-bar-container">
+                <div class="hours-progress-bar" id="volunteer-progress-bar">
+                  <div class="hours-progress-fill" id="volunteer-progress-fill"></div>
+                </div>
+                <span class="hours-progress-percentage" id="volunteer-percentage">0%</span>
+              </div>
+              <p class="hours-progress-label">กิจกรรม จิตอาสา / บริจาค</p>
+            </div>
+          </div>
+        </div>
       </section>
     </div>
 

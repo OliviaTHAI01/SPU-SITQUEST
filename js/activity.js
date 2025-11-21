@@ -493,6 +493,39 @@ document.addEventListener("DOMContentLoaded", () => {
           body: JSON.stringify(participantData)
         });
 
+        // สร้าง hour request อัตโนมัติตาม tags ของกิจกรรม
+        if (hours > 0) {
+          try {
+            // ตรวจสอบว่ามี hour request อยู่แล้วหรือไม่
+            const existingRequests = await apiCall(`/hour-requests/student/${encodeURIComponent(studentId)}`).catch(() => []);
+            const existingRequest = existingRequests.find(r => r.activityTitle === activityTitle);
+            
+            if (!existingRequest) {
+              // สร้าง hour request อัตโนมัติ
+              const requestData = {
+                activityTitle: activityTitle,
+                studentId: studentId,
+                studentName: studentName,
+                hours: hours,
+                status: 'pending',
+                requestDate: new Date().toLocaleDateString('th-TH', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })
+              };
+              
+              await apiCall('/hour-requests', {
+                method: 'POST',
+                body: JSON.stringify(requestData)
+              });
+            }
+          } catch (error) {
+            console.error('Error creating hour request:', error);
+            // ไม่ต้องแสดง error ให้ผู้ใช้ เพราะการ join สำเร็จแล้ว
+          }
+        }
+
         // อัปเดต localStorage เพื่อให้ dashboard.js อ่านได้
         const joinedActivities = JSON.parse(localStorage.getItem(JOINED_ACTIVITIES_KEY) || '[]');
         if (!joinedActivities.includes(activityTitle)) {
@@ -503,7 +536,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Build the message for the modal
         let message = "";
         if (hours > 0) {
-          message = `<p>คุณได้เข้าร่วมกิจกรรมแล้ว!</p><p>หลังจากเข้าร่วมกิจกรรมจริงแล้ว กรุณากดปุ่ม "ยื่นรับเวลากิจกรรม" เพื่อขอรับชั่วโมง ${hours} ชั่วโมง</p><p>ชั่วโมงจะถูกเพิ่มเมื่อ admin อนุมัติการยื่นรับเวลา</p>`;
+          message = `<p>คุณได้เข้าร่วมกิจกรรมแล้ว!</p><p>ระบบได้ยื่นรับเวลากิจกรรมให้คุณอัตโนมัติแล้ว (${hours} ชั่วโมง)</p><p>ชั่วโมงจะถูกเพิ่มเมื่อ admin อนุมัติการยื่นรับเวลา</p>`;
         } else {
           message = `<p>คุณได้เข้าร่วมกิจกรรมเรียบร้อยแล้ว!</p>`;
         }

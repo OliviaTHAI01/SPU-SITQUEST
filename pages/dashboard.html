@@ -15,24 +15,203 @@
       <i class="fas fa-cog settings-icon" id="settingsToggle"></i>
       <main class="main-content">
         <div class="search-bar">
-          <p>สามารถค้นหากิจกรรมได้ที่นี่</p>
-          <div class="search-input-group">
-            <input type="text" id="searchInput" placeholder="ค้นหากิจกรรม...">
-            <i class="fas fa-search"></i>
+          <div class="search-bar-top">
+            <p>สามารถค้นหากิจกรรมได้ที่นี่</p>
+            <div class="search-input-group">
+              <input type="text" id="searchInput" placeholder="ค้นหากิจกรรม...">
+              <i class="fas fa-search"></i>
+            </div>
           </div>
           <div class="search-actions">
-            <button id="find-nearest-btn" class="find-nearest-btn" type="button">
-              <i class="fas fa-map-marker-alt"></i> ค้นหากิจกรรมที่ใกล้ที่สุด
+            <button id="find-nearest-btn" class="action-btn-primary" type="button">
+              <i class="fas fa-map-marker-alt"></i>
+              <span>ค้นหากิจกรรมที่ใกล้ที่สุด</span>
             </button>
-            <div class="history-shortcuts">
-              <a href="history.html#ongoing-panel" class="history-shortcut-link">
-                <i class="fas fa-hourglass-half"></i>
-                กำลังเข้าร่วม
-              </a>
-              <a href="history.html#completed-panel" class="history-shortcut-link">
-                <i class="fas fa-check-circle"></i>
-                ประวัติกิจกรรม
-              </a>
+            <button id="ongoing-activities-btn" class="action-btn-secondary" type="button">
+              <i class="fas fa-hourglass-half"></i>
+              <span>กำลังเข้าร่วม</span>
+            </button>
+            <button id="activity-history-btn" class="action-btn-secondary" type="button">
+              <i class="fas fa-check-circle"></i>
+              <span>ประวัติกิจกรรม</span>
+            </button>
+            <button id="hours-info-btn" class="action-btn-secondary" type="button">
+              <i class="fas fa-info-circle"></i>
+              <span>รายละเอียดการเก็บชั่วโมง</span>
+            </button>
+            <button id="load-form-btn" class="action-btn-secondary" type="button">
+              <i class="fas fa-file-download"></i>
+              <span>โหลดแบบฟอร์ม</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Hours Information Modal -->
+        <div id="hours-info-modal" class="info-modal">
+          <div class="info-modal-content">
+            <div class="info-modal-header">
+              <h2>รายละเอียดการเก็บชั่วโมงกิจกรรม</h2>
+              <span class="info-modal-close">&times;</span>
+            </div>
+            <div class="info-modal-body">
+              <div class="hours-info-section">
+                <h3>📋 หลักเกณฑ์การเก็บชั่วโมงกิจกรรม</h3>
+                <div class="hours-requirement-item">
+                  <div class="requirement-header">
+                    <i class="fas fa-graduation-cap"></i>
+                    <strong>ปี 1 หลักสูตรภาคบังคับ กยศ.</strong>
+                  </div>
+                  <p class="requirement-hours">6 ชั่วโมง</p>
+                  <p class="requirement-desc">กิจกรรมภาคบังคับสำหรับนักศึกษาปี 1 ตามหลักสูตร กยศ.</p>
+                </div>
+                <div class="hours-requirement-item">
+                  <div class="requirement-header">
+                    <i class="fas fa-laptop"></i>
+                    <strong>หลักสูตรออนไลน์อื่นๆ</strong>
+                  </div>
+                  <p class="requirement-hours">12 ชั่วโมง</p>
+                  <p class="requirement-desc">กิจกรรมออนไลน์ที่จัดโดยมหาวิทยาลัยหรือหน่วยงานภายนอก</p>
+                </div>
+                <div class="hours-requirement-item">
+                  <div class="requirement-header">
+                    <i class="fas fa-hands-helping"></i>
+                    <strong>เก็บชั่วโมงกิจกรรมอื่นๆที่ไม่เกี่ยวกับออนไลน์</strong>
+                  </div>
+                  <p class="requirement-hours">18 ชั่วโมง</p>
+                  <p class="requirement-desc">กิจกรรมจิตอาสา บริจาค หรือกิจกรรมอื่นๆ ที่ไม่ใช่ออนไลน์</p>
+                </div>
+              </div>
+
+              <div class="hours-info-section">
+                <h3>❓ คำถามที่พบบ่อย (FAQ)</h3>
+                <div class="faq-item">
+                  <div class="faq-question">
+                    <i class="fas fa-question-circle"></i>
+                    <strong>ชั่วโมงกิจกรรมจะถูกนับเมื่อไหร่?</strong>
+                  </div>
+                  <div class="faq-answer">
+                    ชั่วโมงจะถูกนับเมื่อคุณเข้าร่วมกิจกรรมและได้รับการอนุมัติจากผู้ดูแลระบบแล้ว
+                  </div>
+                </div>
+                <div class="faq-item">
+                  <div class="faq-question">
+                    <i class="fas fa-question-circle"></i>
+                    <strong>สามารถเข้าร่วมกิจกรรมได้กี่กิจกรรม?</strong>
+                  </div>
+                  <div class="faq-answer">
+                    ไม่จำกัดจำนวนกิจกรรม แต่ต้องตรวจสอบว่ากิจกรรมยังมีที่ว่างอยู่
+                  </div>
+                </div>
+                <div class="faq-item">
+                  <div class="faq-question">
+                    <i class="fas fa-question-circle"></i>
+                    <strong>ถ้ายกเลิกการเข้าร่วมกิจกรรมจะเกิดอะไรขึ้น?</strong>
+                  </div>
+                  <div class="faq-answer">
+                    การยื่นรับเวลาจะถูกยกเลิกด้วย และชั่วโมงจะไม่ถูกนับหากยังไม่ได้รับการอนุมัติ
+                  </div>
+                </div>
+                <div class="faq-item">
+                  <div class="faq-question">
+                    <i class="fas fa-question-circle"></i>
+                    <strong>ชั่วโมงกิจกรรมจะถูกแยกตามประเภทอย่างไร?</strong>
+                  </div>
+                  <div class="faq-answer">
+                    ระบบจะแยกชั่วโมงตาม Tags ของกิจกรรม: "Online" จะเข้าไปในหลอด Online และ "จิตอาสาและอื่นๆ" จะเข้าไปในหลอดจิตอาสา/บริจาค
+                  </div>
+                </div>
+                <div class="faq-item">
+                  <div class="faq-question">
+                    <i class="fas fa-question-circle"></i>
+                    <strong>ต้องยื่นรับเวลากิจกรรมเองหรือไม่?</strong>
+                  </div>
+                  <div class="faq-answer">
+                    ไม่ต้อง! ระบบจะยื่นรับเวลาอัตโนมัติเมื่อคุณเข้าร่วมกิจกรรมแล้ว คุณแค่รอการอนุมัติจากผู้ดูแลระบบ
+                  </div>
+                </div>
+                <div class="faq-item">
+                  <div class="faq-question">
+                    <i class="fas fa-question-circle"></i>
+                    <strong>สามารถดูใบเกียรติบัตรได้ที่ไหน?</strong>
+                  </div>
+                  <div class="faq-answer">
+                    ไปที่หน้า "ประวัติกิจกรรม" → Tab "ประวัติใบเกียรติบัตร" เพื่อดูและดาวน์โหลดใบเกียรติบัตร
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="info-modal-footer">
+              <button type="button" class="info-modal-close-btn">ปิด</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Download Modal -->
+        <div id="form-download-modal" class="info-modal">
+          <div class="info-modal-content">
+            <div class="info-modal-header">
+              <h2>โหลดแบบฟอร์มการเก็บชั่วโมงกิจกรรม</h2>
+              <span class="info-modal-close">&times;</span>
+            </div>
+            <div class="info-modal-body">
+              <div class="form-download-section">
+                <p class="form-intro">คุณสามารถดาวน์โหลดแบบฟอร์มการเก็บชั่วโมงกิจกรรมได้ที่นี่:</p>
+
+                <div class="form-download-item">
+                  <div class="form-item-header">
+                    <i class="fas fa-file-pdf"></i>
+                    <div>
+                      <strong>แบบฟอร์มการยื่นรับชั่วโมงกิจกรรม</strong>
+                      <p class="form-desc">แบบฟอร์มสำหรับยื่นรับชั่วโมงกิจกรรมจิตสาธารณะ กยศ.</p>
+                    </div>
+                  </div>
+                  <button type="button" class="download-form-btn" data-form="activity-hours-form">
+                    <i class="fas fa-download"></i>
+                    ดาวน์โหลด
+                  </button>
+                </div>
+
+                <div class="form-download-item">
+                  <div class="form-item-header">
+                    <i class="fas fa-file-word"></i>
+                    <div>
+                      <strong>แบบฟอร์มรายงานกิจกรรม</strong>
+                      <p class="form-desc">แบบฟอร์มสำหรับรายงานผลการเข้าร่วมกิจกรรม</p>
+                    </div>
+                  </div>
+                  <button type="button" class="download-form-btn" data-form="activity-report-form">
+                    <i class="fas fa-download"></i>
+                    ดาวน์โหลด
+                  </button>
+                </div>
+
+                <div class="form-download-item">
+                  <div class="form-item-header">
+                    <i class="fas fa-file-excel"></i>
+                    <div>
+                      <strong>แบบฟอร์มสรุปชั่วโมงกิจกรรม</strong>
+                      <p class="form-desc">แบบฟอร์มสำหรับสรุปชั่วโมงกิจกรรมที่เข้าร่วม</p>
+                    </div>
+                  </div>
+                  <button type="button" class="download-form-btn" data-form="activity-summary-form">
+                    <i class="fas fa-download"></i>
+                    ดาวน์โหลด
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-info-section">
+                <h3>📝 วิธีใช้งานแบบฟอร์ม</h3>
+                <ol class="form-instructions">
+                  <li>ดาวน์โหลดแบบฟอร์มที่ต้องการ</li>
+                  <li>กรอกข้อมูลให้ครบถ้วน</li>
+                  <li>ส่งแบบฟอร์มผ่านระบบออนไลน์หรือส่งให้ผู้ดูแลระบบ</li>
+                  <li>รอการอนุมัติจากผู้ดูแลระบบ</li>
+                </ol>
+              </div>
+            </div>
+            <div class="info-modal-footer">
+              <button type="button" class="info-modal-close-btn">ปิด</button>
             </div>
           </div>
         </div>
@@ -71,19 +250,24 @@
           <p class="progress-type-title">
             ชั่วโมงกิจกรรมประเภท : กิจกรรมจิตสาธารณะ กยศ.
           </p>
-          <div class="circular-progress-container">
-            <svg
-              class="circular-progress"
-              width="150"
-              height="150"
-              viewBox="0 0 150 150"
-            >
-              <circle class="bg" cx="75" cy="75" r="60"></circle>
-              <circle class="fg" cx="75" cy="75" r="60"></circle>
-            </svg>
-            <div class="progress-text-center">
-              <span class="percentage">70%</span>
-              <span class="hours-text">70 / 72 Hours</span>
+          <div class="dashboard-progress-section">
+            <div class="dashboard-progress-item">
+              <div class="dashboard-progress-bar-container">
+                <div class="dashboard-progress-bar">
+                  <div class="dashboard-progress-fill dashboard-progress-online" id="dashboard-online-progress-fill"></div>
+                </div>
+                <span class="dashboard-progress-percentage" id="dashboard-online-percentage">0%</span>
+              </div>
+              <p class="dashboard-progress-label">กิจกรรม Online</p>
+            </div>
+            <div class="dashboard-progress-item">
+              <div class="dashboard-progress-bar-container">
+                <div class="dashboard-progress-bar">
+                  <div class="dashboard-progress-fill dashboard-progress-volunteer" id="dashboard-volunteer-progress-fill"></div>
+                </div>
+                <span class="dashboard-progress-percentage" id="dashboard-volunteer-percentage">0%</span>
+              </div>
+              <p class="dashboard-progress-label">กิจกรรม จิตอาสา / บริจาค</p>
             </div>
           </div>
         </div>

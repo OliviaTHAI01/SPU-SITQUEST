@@ -208,6 +208,27 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="activity-tags">Tags (เลือกได้หลายตัว)</label>
+                    <div class="tags-container">
+                        <div class="tags-options">
+                            <label class="tag-option">
+                                <input type="checkbox" value="Online" class="tag-checkbox">
+                                <span class="tag-badge tag-online">Online</span>
+                            </label>
+                            <label class="tag-option">
+                                <input type="checkbox" value="จิตอาสาและอื่นๆ" class="tag-checkbox">
+                                <span class="tag-badge tag-volunteer">จิตอาสาและอื่นๆ</span>
+                            </label>
+                        </div>
+                        <div class="tags-input-container">
+                            <input type="text" id="activity-tags-custom" placeholder="เพิ่ม tag ใหม่ (กด Enter)" class="tags-custom-input">
+                            <small>พิมพ์ tag ใหม่แล้วกด Enter เพื่อเพิ่ม</small>
+                        </div>
+                        <div class="selected-tags" id="selected-tags-display"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
                     <label>เลือกตำแหน่งจากแผนที่</label>
                     <div id="map-picker" class="map-box"></div>
                     <button type="button" id="pick-location-btn" class="view-archived-btn map-action-btn">
@@ -304,6 +325,27 @@
                 <div class="form-group">
                     <label for="edit-activity-location">สถานที่จัดกิจกรรม</label>
                     <input type="text" id="edit-activity-location" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-activity-tags">Tags (เลือกได้หลายตัว)</label>
+                    <div class="tags-container">
+                        <div class="tags-options">
+                            <label class="tag-option">
+                                <input type="checkbox" value="Online" class="edit-tag-checkbox">
+                                <span class="tag-badge tag-online">Online</span>
+                            </label>
+                            <label class="tag-option">
+                                <input type="checkbox" value="จิตอาสาและอื่นๆ" class="edit-tag-checkbox">
+                                <span class="tag-badge tag-volunteer">จิตอาสาและอื่นๆ</span>
+                            </label>
+                        </div>
+                        <div class="tags-input-container">
+                            <input type="text" id="edit-activity-tags-custom" placeholder="เพิ่ม tag ใหม่ (กด Enter)" class="tags-custom-input">
+                            <small>พิมพ์ tag ใหม่แล้วกด Enter เพื่อเพิ่ม</small>
+                        </div>
+                        <div class="selected-tags" id="edit-selected-tags-display"></div>
+                    </div>
                 </div>
 
                 <div class="form-group">
