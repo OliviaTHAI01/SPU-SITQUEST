@@ -120,10 +120,6 @@
           </div>
 
           <div class="detail-group">
-            <button id="show-form-button" class="action-button" style="display: none;">รายละเอียดเพิ่มเติม</button>
-          </div>
-
-          <div class="detail-group">
             <button id="join-button" class="action-button" style="display: none;">
               เข้าร่วมกิจกรรม
             </button>
@@ -190,19 +186,24 @@
           <p class="progress-type-title">
             ชั่วโมงกิจกรรมประเภท : กิจกรรมจิตสาธารณะ กยศ.
           </p>
-          <div class="circular-progress-container">
-            <svg
-              class="circular-progress"
-              width="150"
-              height="150"
-              viewBox="0 0 150 150"
-            >
-              <circle class="bg" cx="75" cy="75" r="60"></circle>
-              <circle class="fg" cx="75" cy="75" r="60"></circle>
-            </svg>
-            <div class="progress-text-center">
-              <span class="percentage">70%</span>
-              <span class="hours-text">70 / 72 Hours</span>
+          <div class="dashboard-progress-section">
+            <div class="dashboard-progress-item">
+              <div class="dashboard-progress-bar-container">
+                <div class="dashboard-progress-bar">
+                  <div class="dashboard-progress-fill dashboard-progress-online" id="activity-online-progress-fill"></div>
+                </div>
+                <span class="dashboard-progress-percentage" id="activity-online-percentage">0%</span>
+              </div>
+              <p class="dashboard-progress-label">กิจกรรม Online</p>
+            </div>
+            <div class="dashboard-progress-item">
+              <div class="dashboard-progress-bar-container">
+                <div class="dashboard-progress-bar">
+                  <div class="dashboard-progress-fill dashboard-progress-volunteer" id="activity-volunteer-progress-fill"></div>
+                </div>
+                <span class="dashboard-progress-percentage" id="activity-volunteer-percentage">0%</span>
+              </div>
+              <p class="dashboard-progress-label">กิจกรรม จิตอาสา / บริจาค</p>
             </div>
           </div>
         </div>
@@ -297,75 +298,100 @@
         }
       }
 
-      // ฟังก์ชันคำนวณชั่วโมงทั้งหมดจากกิจกรรมที่ admin อนุมัติแล้วเท่านั้น
-      async function calculateTotalHours() {
+      // ฟังก์ชันคำนวณชั่วโมงแยกตาม Tags (Online / จิตอาสา)
+      async function calculateHoursByTags() {
         try {
           const studentInfo = JSON.parse(localStorage.getItem('spu-student-info') || '{}');
           const studentId = studentInfo.studentId || localStorage.getItem('studentId') || '68000000';
           
           try {
-            const requests = await apiCall(`/hour-requests/student/${encodeURIComponent(studentId)}`);
+            const [requests, activities] = await Promise.all([
+              apiCall(`/hour-requests/student/${encodeURIComponent(studentId)}`).catch(() => []),
+              apiCall('/activities?includeArchived=true').catch(() => [])
+            ]);
             
-            let totalHours = 0;
+            const activityMap = new Map();
+            if (Array.isArray(activities)) {
+              activities.forEach(activity => {
+                activityMap.set(activity.title, activity);
+              });
+            }
+            
+            let onlineHours = 0;
+            let volunteerHours = 0;
             
             // คำนวณชั่วโมงจากกิจกรรมที่ admin อนุมัติแล้วเท่านั้น (status = 'approved')
             if (Array.isArray(requests)) {
               requests.forEach(request => {
                 if (request.status === 'approved' && request.hours) {
-                  totalHours += parseInt(request.hours, 10);
+                  const hours = parseInt(request.hours, 10) || 0;
+                  const activity = activityMap.get(request.activityTitle);
+                  
+                  if (activity) {
+                    const tags = activity.tags || [];
+                    const hasOnline = tags.includes('Online');
+                    const hasVolunteer = tags.includes('จิตอาสาและอื่นๆ') ||
+                                        tags.includes('จิตอาสา') ||
+                                        tags.includes('และอื่นๆ');
+                    
+                    if (hasOnline) {
+                      onlineHours += hours;
+                    }
+                    if (hasVolunteer) {
+                      volunteerHours += hours;
+                    }
+                  }
                 }
               });
             }
             
-            return totalHours;
+            return { onlineHours, volunteerHours };
           } catch (error) {
             // ถ้าไม่พบข้อมูล (404) หรือไม่มีข้อมูล ให้ return 0
             if (error.message.includes('404')) {
-              return 0;
+              return { onlineHours: 0, volunteerHours: 0 };
             }
             throw error;
           }
         } catch (error) {
-          console.error('Error calculating total hours:', error);
-          return 0;
+          console.error('Error calculating hours by tags:', error);
+          return { onlineHours: 0, volunteerHours: 0 };
         }
       }
 
-      // กำหนดค่า
-      const maxHours = 72; // ชั่วโมงสูงสุด
-      let currentHours = 0;
-      let percentage = 0;
-      
-      // อ้างอิง Element
-      const progressCircle = document.querySelector(".circular-progress .fg");
-      const percentageText = document.querySelector(".percentage");
-      const hoursText = document.querySelector(".hours-text");
+      const maxHours = 72;
+      let onlineHours = 0;
+      let volunteerHours = 0;
 
-      // ฟังก์ชันอัปเดต Progress Circle
-      function updateProgressCircle() {
-        if (progressCircle && percentageText && hoursText) {
-          // คำนวณค่าทางคณิตศาสตร์ (สำหรับ Progress Bar)
-          const radius = 60; // รัศมี r="60" จาก HTML
-          const circumference = 2 * Math.PI * radius; // สูตร 2 * pi * r
+      const onlineProgressFill = document.getElementById('activity-online-progress-fill');
+      const onlinePercentageText = document.getElementById('activity-online-percentage');
+      const volunteerProgressFill = document.getElementById('activity-volunteer-progress-fill');
+      const volunteerPercentageText = document.getElementById('activity-volunteer-percentage');
 
-          // คำนวณค่า Offset
-          const offset = circumference - (percentage / 100) * circumference;
+      function updateProgressBars() {
+        const onlinePercentage = Math.min((onlineHours / maxHours) * 100, 100);
+        const volunteerPercentage = Math.min((volunteerHours / maxHours) * 100, 100);
 
-          // อัปเดต SVG
-          progressCircle.style.strokeDasharray = circumference;
-          progressCircle.style.strokeDashoffset = offset;
+        if (onlineProgressFill) {
+          onlineProgressFill.style.width = `${onlinePercentage}%`;
+        }
+        if (onlinePercentageText) {
+          onlinePercentageText.textContent = `${Math.round(onlinePercentage)}%`;
+        }
 
-          // อัปเดตข้อความ
-          percentageText.textContent = `${Math.round(percentage)}%`;
-          hoursText.textContent = `${currentHours} / ${maxHours} Hours`;
+        if (volunteerProgressFill) {
+          volunteerProgressFill.style.width = `${volunteerPercentage}%`;
+        }
+        if (volunteerPercentageText) {
+          volunteerPercentageText.textContent = `${Math.round(volunteerPercentage)}%`;
         }
       }
 
-      // ฟังก์ชันอัปเดต Progress จาก API
       async function updateDashboardProgress() {
-        currentHours = await calculateTotalHours();
-        percentage = Math.min((currentHours / maxHours) * 100, 100);
-        updateProgressCircle();
+        const { onlineHours: online, volunteerHours: volunteer } = await calculateHoursByTags();
+        onlineHours = online;
+        volunteerHours = volunteer;
+        updateProgressBars();
       }
 
       // Export function สำหรับอัปเดตจากภายนอก

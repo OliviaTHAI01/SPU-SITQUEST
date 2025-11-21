@@ -32,7 +32,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const joinButton = document.getElementById("join-button");
   const cancelButton = document.getElementById("cancel-button");
   const requestHoursButton = document.getElementById("request-hours-button");
-  const showFormButton = document.getElementById("show-form-button");
   const requestStatus = document.getElementById("request-status");
   const statusText = document.getElementById("status-text");
   const approvedStatus = document.getElementById("approved-status");
@@ -150,35 +149,22 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // อัปเดตลิงค์ฟอร์ม
     const formSection = document.getElementById('registration-form');
-    const showFormButton = document.getElementById('show-form-button');
     
     if (activity.formLink && activity.formLink.trim() !== '') {
-      // มีลิงก์ฟอร์ม - แสดงปุ่มและฟอร์ม
+      // มีลิงก์ฟอร์ม - แสดงฟอร์มทันที
       if (registrationLinkElement) {
         registrationLinkElement.href = activity.formLink;
         registrationLinkElement.textContent = activity.formLink;
       }
-      
-      // แสดงปุ่มรายละเอียดเพิ่มเติม
-      if (showFormButton) {
-        showFormButton.style.display = 'block';
-      }
-      
-      // แสดงฟอร์มโดยอัตโนมัติเมื่อมีลิงก์
+
       if (formSection) {
         formSection.style.display = 'block';
-        if (showFormButton) {
-          showFormButton.textContent = 'ซ่อนฟอร์ม';
-        }
         console.log('Form section displayed with link:', activity.formLink);
       } else {
         console.error('Form section element not found!');
       }
     } else {
-      // ไม่มีลิงก์ฟอร์ม - ซ่อนปุ่มและฟอร์ม
-      if (showFormButton) {
-        showFormButton.style.display = 'none';
-      }
+      // ไม่มีลิงก์ฟอร์ม - ซ่อนฟอร์ม
       if (formSection) {
         formSection.style.display = 'none';
       }
