@@ -204,7 +204,18 @@
 
                 <div class="form-group">
                     <label for="activity-location">สถานที่</label>
-                    <input type="text" id="activity-location" placeholder="ระบุชื่อสถานที่" required>
+                    <div class="location-input-wrapper">
+                        <div class="location-field">
+                            <input type="text" id="activity-location" placeholder="ระบุชื่อสถานที่หรือจุดนัดพบ" required>
+                            <button type="button" id="pick-location-btn" class="map-search-btn">
+                                <i class="fas fa-map-marker-alt"></i> ค้นหาจากชื่อ
+                            </button>
+                        </div>
+                        <p class="location-hint">
+                            <i class="fas fa-lightbulb"></i>
+                            กรอกชื่อสถานที่ (เช่น SPU building, Central Ladprao) แล้วกดค้นหา ระบบจะเลื่อนหมุดไปยังจุดนั้น คุณยังสามารถลากหมุดบนแผนที่เพื่อปรับตำแหน่งได้
+                        </p>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -231,25 +242,12 @@
                 <div class="form-group">
                     <label>เลือกตำแหน่งจากแผนที่</label>
                     <div id="map-picker" class="map-box"></div>
-                    <button type="button" id="pick-location-btn" class="view-archived-btn map-action-btn">
-                        <i class="fas fa-map-marker-alt"></i> ค้นหาสถานที่จากชื่อ
-                    </button>
                     <input type="hidden" id="activity-lat">
                     <input type="hidden" id="activity-lng">
-                    <small>คลิกบนแผนที่เพื่อเลือกตำแหน่ง หรือลากหมุดเพื่อย้ายตำแหน่ง</small>
-                    <div class="form-row coords-row">
-                        <div class="form-group">
-                            <label for="activity-lat-input">ละติจูด (Latitude)</label>
-                            <input type="number" id="activity-lat-input" step="any">
-                        </div>
-                        <div class="form-group">
-                            <label for="activity-lng-input">ลองจิจูด (Longitude)</label>
-                            <input type="number" id="activity-lng-input" step="any">
-                        </div>
-                    </div>
-                    <button type="button" id="update-coords-btn" class="add-activity-btn map-action-btn">
-                        <i class="fas fa-sync-alt"></i> อัปเดตแผนที่
-                    </button>
+                    <p class="map-hint">
+                        <i class="fas fa-map"></i>
+                        คลิกบนแผนที่หรือใช้การลากหมุดเพื่อระบุตำแหน่งที่แน่นอน หากไม่พบสถานที่ที่ต้องการ ให้ลองกรอกชื่อภาษาอังกฤษหรือเขียนคำอธิบายเพิ่มเติมในช่องรายละเอียดกิจกรรม
+                    </p>
                 </div>
 
                 <button type="submit" class="submit-btn">บันทึกกิจกรรม</button>
@@ -324,7 +322,18 @@
 
                 <div class="form-group">
                     <label for="edit-activity-location">สถานที่จัดกิจกรรม</label>
-                    <input type="text" id="edit-activity-location" required>
+                    <div class="location-input-wrapper">
+                        <div class="location-field">
+                            <input type="text" id="edit-activity-location" placeholder="ระบุชื่อสถานที่หรือจุดนัดพบ" required>
+                            <button type="button" id="edit-pick-location-btn" class="map-search-btn">
+                                <i class="fas fa-map-marker-alt"></i> ค้นหาจากชื่อ
+                            </button>
+                        </div>
+                        <p class="location-hint">
+                            <i class="fas fa-info-circle"></i>
+                            ปรับตำแหน่งได้ทั้งจากการค้นหาชื่อสถานที่หรือขยับหมุดบนแผนที่ หากไม่พบสถานที่ให้กรอกคำอธิบายเพิ่มเติมในรายละเอียดกิจกรรม
+                        </p>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -351,24 +360,12 @@
                 <div class="form-group">
                     <label>เลือกตำแหน่งจากแผนที่</label>
                     <div id="edit-map-picker" class="map-box"></div>
-                    <button type="button" id="edit-pick-location-btn" class="view-archived-btn map-action-btn">
-                        <i class="fas fa-map-marker-alt"></i> ค้นหาสถานที่จากชื่อ
-                    </button>
                     <input type="hidden" id="edit-activity-lat">
                     <input type="hidden" id="edit-activity-lng">
-                    <div class="form-row coords-row">
-                        <div class="form-group">
-                            <label for="edit-activity-lat-input">ละติจูด</label>
-                            <input type="number" id="edit-activity-lat-input" step="any">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-activity-lng-input">ลองจิจูด</label>
-                            <input type="number" id="edit-activity-lng-input" step="any">
-                        </div>
-                    </div>
-                    <button type="button" id="edit-update-coords-btn" class="add-activity-btn map-action-btn">
-                        <i class="fas fa-sync-alt"></i> อัปเดตแผนที่
-                    </button>
+                    <p class="map-hint">
+                        <i class="fas fa-location-crosshairs"></i>
+                        หมุดจะแสดงสถานที่ล่าสุดของกิจกรรม สามารถคลิกเพื่อย้ายจุดหรือกดค้นหาด้วยชื่อใหม่เพื่อปรับแก้
+                    </p>
                 </div>
 
                 <input type="hidden" id="edit-activity-original-title">

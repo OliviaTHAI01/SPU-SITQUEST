@@ -39,44 +39,45 @@ function initMap() {
         const pickLocationBtn = document.getElementById('pick-location-btn');
         if (pickLocationBtn) {
             pickLocationBtn.addEventListener('click', function() {
-                const locationInput = document.getElementById('activity-location').value;
-                if (locationInput) {
-                    searchLocation(locationInput, function(lat, lng) {
+                const locationField = document.getElementById('activity-location');
+                let locationQuery = locationField ? locationField.value.trim() : '';
+                
+                if (!locationQuery) {
+                    locationQuery = prompt('กรุณากรอกชื่อสถานที่ที่ต้องการค้นหา:', '');
+                    if (locationQuery && locationField) {
+                        locationField.value = locationQuery;
+                    }
+                }
+                
+                locationQuery = locationQuery ? locationQuery.trim() : '';
+                
+                if (!locationQuery) {
+                    alert('กรุณากรอกชื่อสถานที่ก่อนค้นหา');
+                    if (locationField) locationField.focus();
+                    return;
+                }
+                
+                pickLocationBtn.disabled = true;
+                pickLocationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังค้นหา...';
+                
+                searchLocation(locationQuery, function(lat, lng) {
+                    pickLocationBtn.disabled = false;
+                    pickLocationBtn.innerHTML = '<i class="fas fa-map-marker-alt"></i> ค้นหาจากชื่อ';
+                    
                         if (lat && lng) {
-                            map.setView([lat, lng], 15);
-                            marker.setLatLng([lat, lng]);
-                            updateCoordinates(lat, lng, 'add');
-                        } else {
-                            alert('ไม่พบสถานที่ที่ค้นหา');
-                        }
-                    });
-                }
+                        map.setView([lat, lng], 15);
+                        marker.setLatLng([lat, lng]);
+                        updateCoordinates(lat, lng, 'add');
+                            if (locationField && locationField.value !== locationQuery) {
+                                locationField.value = locationQuery;
+                            }
+                    } else {
+                        alert('ไม่พบสถานที่ที่ค้นหา');
+                    }
+                });
             });
         }
         
-        // Update coordinates manually
-        const updateCoordsBtn = document.getElementById('update-coords-btn');
-        if (updateCoordsBtn) {
-            updateCoordsBtn.addEventListener('click', function() {
-                const lat = parseFloat(document.getElementById('activity-lat-input').value);
-                const lng = parseFloat(document.getElementById('activity-lng-input').value);
-                if (!isNaN(lat) && !isNaN(lng)) {
-                    map.setView([lat, lng], 15);
-                    marker.setLatLng([lat, lng]);
-                    updateCoordinates(lat, lng, 'add');
-                } else {
-                    alert('กรุณากรอกพิกัดให้ถูกต้อง');
-                }
-            });
-        }
-        
-        // Load existing coordinates to input fields
-        const latInput = document.getElementById('activity-lat-input');
-        const lngInput = document.getElementById('activity-lng-input');
-        if (latInput && lngInput) {
-            latInput.value = defaultLocation[0];
-            lngInput.value = defaultLocation[1];
-        }
     }
     
     // Initialize map for edit activity modal
@@ -111,36 +112,45 @@ function initMap() {
         const editPickLocationBtn = document.getElementById('edit-pick-location-btn');
         if (editPickLocationBtn) {
             editPickLocationBtn.addEventListener('click', function() {
-                const locationInput = document.getElementById('edit-activity-location').value;
-                if (locationInput) {
-                    searchLocation(locationInput, function(lat, lng) {
-                        if (lat && lng) {
-                            editMap.setView([lat, lng], 15);
-                            editMarker.setLatLng([lat, lng]);
-                            updateCoordinates(lat, lng, 'edit');
-                        } else {
-                            alert('ไม่พบสถานที่ที่ค้นหา');
-                        }
-                    });
+                const locationField = document.getElementById('edit-activity-location');
+                let locationQuery = locationField ? locationField.value.trim() : '';
+                
+                if (!locationQuery) {
+                    locationQuery = prompt('กรุณากรอกชื่อสถานที่ที่ต้องการค้นหา:', '');
+                    if (locationQuery && locationField) {
+                        locationField.value = locationQuery;
+                    }
                 }
+                
+                locationQuery = locationQuery ? locationQuery.trim() : '';
+                
+                if (!locationQuery) {
+                    alert('กรุณากรอกชื่อสถานที่ก่อนค้นหา');
+                    if (locationField) locationField.focus();
+                    return;
+                }
+                
+                editPickLocationBtn.disabled = true;
+                editPickLocationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังค้นหา...';
+                
+                searchLocation(locationQuery, function(lat, lng) {
+                    editPickLocationBtn.disabled = false;
+                    editPickLocationBtn.innerHTML = '<i class="fas fa-map-marker-alt"></i> ค้นหาจากชื่อ';
+                    
+                        if (lat && lng) {
+                        editMap.setView([lat, lng], 15);
+                        editMarker.setLatLng([lat, lng]);
+                        updateCoordinates(lat, lng, 'edit');
+                            if (locationField && locationField.value !== locationQuery) {
+                                locationField.value = locationQuery;
+                            }
+                    } else {
+                        alert('ไม่พบสถานที่ที่ค้นหา');
+                    }
+                });
             });
         }
         
-        // Update coordinates manually
-        const editUpdateCoordsBtn = document.getElementById('edit-update-coords-btn');
-        if (editUpdateCoordsBtn) {
-            editUpdateCoordsBtn.addEventListener('click', function() {
-                const lat = parseFloat(document.getElementById('edit-activity-lat-input').value);
-                const lng = parseFloat(document.getElementById('edit-activity-lng-input').value);
-                if (!isNaN(lat) && !isNaN(lng)) {
-                    editMap.setView([lat, lng], 15);
-                    editMarker.setLatLng([lat, lng]);
-                    updateCoordinates(lat, lng, 'edit');
-                } else {
-                    alert('กรุณากรอกพิกัดให้ถูกต้อง');
-                }
-            });
-        }
     }
 }
 
@@ -149,17 +159,9 @@ function updateCoordinates(lat, lng, mode) {
     if (mode === 'add') {
         document.getElementById('activity-lat').value = lat;
         document.getElementById('activity-lng').value = lng;
-        const latInput = document.getElementById('activity-lat-input');
-        const lngInput = document.getElementById('activity-lng-input');
-        if (latInput) latInput.value = lat;
-        if (lngInput) lngInput.value = lng;
     } else if (mode === 'edit') {
         document.getElementById('edit-activity-lat').value = lat;
         document.getElementById('edit-activity-lng').value = lng;
-        const latInput = document.getElementById('edit-activity-lat-input');
-        const lngInput = document.getElementById('edit-activity-lng-input');
-        if (latInput) latInput.value = lat;
-        if (lngInput) lngInput.value = lng;
     }
 }
 
@@ -1866,8 +1868,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (editMarker) {
                     editMarker.setLatLng([lat, lng]);
                 }
-                document.getElementById('edit-activity-lat-input').value = lat;
-                document.getElementById('edit-activity-lng-input').value = lng;
             }
 
                 editActivityModal.style.display = 'flex';
