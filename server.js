@@ -245,17 +245,76 @@ const Participant = mongoose.model('Participant', participantSchema);
 const HourRequest = mongoose.model('HourRequest', hourRequestSchema);
 const Student = mongoose.model('Student', studentSchema);
 
-// Create indexes for better query performance
-Activity.collection.createIndex({ title: 1 });
-Activity.collection.createIndex({ isArchived: 1 });
-Activity.collection.createIndex({ createdAt: -1 });
-Participant.collection.createIndex({ activityTitle: 1, studentId: 1 });
-Participant.collection.createIndex({ studentId: 1 });
-HourRequest.collection.createIndex({ activityTitle: 1 });
-HourRequest.collection.createIndex({ studentId: 1 });
-HourRequest.collection.createIndex({ status: 1 });
-Student.collection.createIndex({ username: 1 });
-Student.collection.createIndex({ studentId: 1 });
+// Helper function to safely create indexes (won't fail if index already exists)
+async function createIndexSafe(collection, indexSpec, options = {}) {
+  try {
+    // Try to create index - MongoDB will handle if it already exists
+    // Use background: true to avoid blocking, and catch conflicts
+    await collection.createIndex(indexSpec, { 
+      ...options, 
+      background: true,
+      // Don't fail if index already exists
+    });
+    console.log(`✅ Index created/verified: ${JSON.stringify(indexSpec)}`);
+  } catch (error) {
+    // If index exists (with same or different options), just log and continue
+    if (error.code === 86 || error.codeName === 'IndexKeySpecsConflict' || 
+        error.code === 85 || error.codeName === 'IndexOptionsConflict' ||
+        error.message && error.message.includes('already exists')) {
+      console.log(`ℹ️  Index already exists (skipping): ${JSON.stringify(indexSpec)}`);
+    } else {
+      // Only log other errors, don't throw
+      console.error(`⚠️  Error creating index (non-critical):`, error.message);
+    }
+  }
+}
+
+// Create indexes for better query performance (safely, won't fail if they exist)
+async function initializeIndexes() {
+  try {
+    // Wait for connection if not ready
+    if (mongoose.connection.readyState !== 1) {
+      await new Promise((resolve) => {
+        if (mongoose.connection.readyState === 1) {
+          resolve();
+        } else {
+          mongoose.connection.once('open', resolve);
+        }
+      });
+    }
+    
+    // Activity indexes
+    await createIndexSafe(Activity.collection, { title: 1 });
+    await createIndexSafe(Activity.collection, { isArchived: 1 });
+    await createIndexSafe(Activity.collection, { createdAt: -1 });
+    
+    // Participant indexes
+    await createIndexSafe(Participant.collection, { activityTitle: 1, studentId: 1 });
+    await createIndexSafe(Participant.collection, { studentId: 1 });
+    
+    // HourRequest indexes
+    await createIndexSafe(HourRequest.collection, { activityTitle: 1 });
+    await createIndexSafe(HourRequest.collection, { studentId: 1 });
+    await createIndexSafe(HourRequest.collection, { status: 1 });
+    
+    // Student indexes - Note: username and studentId already have unique indexes from schema
+    // Don't recreate them as they are automatically created by mongoose with unique: true
+    // Only create if we need non-unique indexes for these fields (which we don't)
+    
+    console.log('✅ Database indexes initialized');
+  } catch (error) {
+    console.error('❌ Error initializing indexes:', error.message);
+  }
+}
+
+// Initialize indexes when connection is ready
+if (mongoose.connection.readyState === 1) {
+  // Connection already open, initialize immediately
+  initializeIndexes();
+} else {
+  // Wait for connection to open
+  mongoose.connection.once('open', initializeIndexes);
+}
 
 // ==================== ACTIVITIES API ====================
 
